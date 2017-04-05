@@ -1,0 +1,2 @@
+netxms-server = %{version}
+mysql-server >= 5.1

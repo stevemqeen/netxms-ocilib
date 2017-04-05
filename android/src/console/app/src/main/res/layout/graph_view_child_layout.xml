@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/graph_view_child_layout"
+    android:layout_width="fill_parent"
+	android:layout_height="fill_parent">
+	<TextView 
+		android:id="@+id/tvChild"
+		android:textIsSelectable="false"
+	    android:layout_width="fill_parent"
+		android:layout_height="36dp"
+		android:paddingLeft="36dp"
+		android:paddingStart="36dp"
+		android:paddingRight="5dp"
+		android:paddingEnd="5dp"
+		android:gravity="center_vertical"
+		android:textSize="17sp"
+		android:textColor="@color/text_color"
+		android:cacheColorHint="@color/item_body"
+		android:background="@drawable/explist_selection">
+	</TextView>
+</LinearLayout>

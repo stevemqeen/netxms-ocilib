@@ -1,0 +1,190 @@
+# Common settings for Win32 builds
+# This makefile expects that path to build tools and environment variables
+# LIB and INCLUDE for target architecture set before running make
+# They can be set using build\msvc_setenv_* scripts
+
+CC = cl
+CXX = cl
+LD = link
+PERL = perl
+LEX = flex
+YACC = bison
+MC = mc
+
+# Source base path
+# Default location is C:\Source\NetXMS
+# It can be changed by setting NETXMS_BASE environment variable
+!ifndef NETXMS_BASE
+NETXMS_BASE = C:\Source\NetXMS
+!endif
+
+# Architecture
+!ifndef ARCH
+ARCH = x64
+!endif
+
+!if "$(ARCH)" == "x64"
+WINDDK_ARCH = amd64
+OBJDIR = amd64
+!endif
+
+!if "$(ARCH)" == "x86"
+WINDDK_ARCH = i386
+OBJDIR = i386
+!endif
+
+# SDK locations
+!ifndef WINDDK_BASE
+WINDDK_BASE = C:\SDK\WinDDK
+!endif
+!ifndef OPENSSL_BASE
+OPENSSL_BASE = C:\SDK\OpenSSL
+!endif
+!ifndef CURL_BASE
+CURL_BASE = C:\SDK\cURL
+!endif
+!ifndef JDK_BASE
+JDK_BASE = C:\Program Files\Java\jdk1.8.0_121
+!endif
+
+# Binaries directory
+NETXMS_LIBDIR = $(NETXMS_BASE)\bin\$(OBJDIR)
+BINDIR = $(NETXMS_LIBDIR)
+
+# Component specific settings
+!if "$(COMPONENT)" == "server"
+CPPFLAGS = $(CPPFLAGS) /I "$(NETXMS_BASE)\src\server\include"
+!endif
+	
+# Target specific settings
+!if "$(TYPE)" == "dll"
+CPPFLAGS = $(CPPFLAGS) /D_USRDLL
+IMPLIB = $(BINFILE:.dll=.lib)
+LDFLAGS = $(LDFLAGS) /DLL /IMPLIB:$(IMPLIB)
+!endif
+!if "$(TYPE)" == "ddr"
+CPPFLAGS = $(CPPFLAGS) /D_USRDLL
+LDFLAGS = $(LDFLAGS) /DLL
+!endif
+!if "$(TYPE)" == "ndd"
+BINDIR = $(BINDIR)\ndd
+CPPFLAGS = $(CPPFLAGS) /D_USRDLL
+LDFLAGS = $(LDFLAGS) /DLL
+!endif
+!if "$(TYPE)" == "nsm"
+CPPFLAGS = $(CPPFLAGS) /D_USRDLL
+LDFLAGS = $(LDFLAGS) /DLL
+!endif
+
+# Common C/C++ compiler flags
+CPPFLAGS = $(CPPFLAGS) /O2 /Gd /EHs- /GR- \
+	/I "$(NETXMS_BASE)\include" \
+	/I "$(NETXMS_BASE)\build" \
+	/I "$(CURL_BASE)\$(ARCH)\include" \
+	/I "$(OPENSSL_BASE)\$(ARCH)\include" \
+	/D_MT /DUNICODE
+
+# Common linker flags
+MANIFEST = $(TARGET).intermediate.manifest
+LDFLAGS = $(LDFLAGS) /SUBSYSTEM:CONSOLE /MACHINE:$(ARCH) /MANIFESTFILE:$(MANIFEST) \
+	/LIBPATH:"$(NETXMS_LIBDIR)" \
+	/LIBPATH:"$(CURL_BASE)\$(ARCH)\lib" \
+	/LIBPATH:"$(OPENSSL_BASE)\$(ARCH)\lib" \
+	/LIBPATH:"$(WINDDK_BASE)\lib\wnet\$(WINDDK_ARCH)"
+
+# Common libraries
+LIBS = $(LIBS) ssleay32.lib libeay32.lib uuid.lib kernel32.lib user32.lib advapi32.lib shell32.lib
+
+# Prepare list of object files	
+__sources = $(SOURCES:.cpp=.obj)
+OBJ = $(__sources:.c=.obj)
+
+# Source directory
+SRCDIR = $(MAKEDIR)
+
+# Output files
+!ifdef TARGET
+BINFILE = $(BINDIR)\$(TARGET)
+!endif
+
+all: Makefile.w32 subdirs $(GENERATED) $(BINFILE)
+
+# Build target
+!ifdef TARGET
+
+!if "$(TYPE)" == "jar"
+
+$(BINFILE): pom.xml
+	mvn clean
+	mvn install
+	mv target/$(TARGET) $(BINFILE)
+
+!else
+
+$(BINFILE): objdir $(OBJ)
+   @if not exist $(BINDIR) mkdir $(BINDIR)
+   @echo "    LD " $(TARGET)
+   $(LD) /NOLOGO $(LDFLAGS) /out:$(BINFILE) $(OBJ) $(LIBS)
+	@rm -f $(MANIFEST)
+
+.PHONY: objdir
+
+objdir:
+   @if not exist $(OBJDIR) mkdir $(OBJDIR)
+   @cd $(OBJDIR)
+
+{$(SRCDIR)}.c.obj:
+   @echo "    CC " $(<F)
+   @$(CC) /nologo $(CPPFLAGS) $(CFLAGS) /c $< /Fo$@ | tail -n +2
+
+{$(SRCDIR)}.cpp.obj:
+   @echo "    CXX" $(<F)
+   @$(CXX) /nologo $(CPPFLAGS) $(CXXFLAGS) /c $< /Fo$@ | tail -n +2
+
+.rc.res:
+   @echo "    RC " $(<F)
+   @$(RC) /nologo /r $<
+
+MSG00001.bin: messages.mc
+   @echo "    MC  messages.mc"
+   @$(MC) messages.mc
+   @rm -f messages.rc
+
+messages.h: messages.mc
+   @echo "    MC  messages.mc"
+   @$(MC) messages.mc
+   @rm -f messages.rc
+
+!endif
+!endif
+
+# Clean
+.PHONY: clean
+
+clean:
+   rm -rf $(OBJ) $(TARGET) $(OBJDIR) $(GENERATED) $(EXTRA_CLEAN)
+	@for %%s in ($(SUBDIRS)) do @( \
+		echo === Entering %%s === && \
+		cd %%s && \
+      @( \
+			$(MAKE) /NOLOGO /F Makefile.w32 clean || \
+         exit 1 \
+      ) && \
+		echo === Leaving %%s === && \
+		cd .. \
+   )
+
+# Sub-directories building rules
+.PHONY: subdirs
+
+subdirs:
+	@for %%s in ($(SUBDIRS)) do @( \
+		echo === Entering %%s === && \
+		cd %%s && \
+      @( \
+			$(MAKE) /NOLOGO /F Makefile.w32 || \
+         exit 1 \
+      ) && \
+		echo === Leaving %%s === && \
+		cd .. \
+   )

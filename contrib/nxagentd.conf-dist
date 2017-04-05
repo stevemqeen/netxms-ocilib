@@ -1,0 +1,239 @@
+#
+# Sample configuration file for NetXMS agent
+#
+
+#
+# Servers
+#
+# List of management servers which have read access to this agent.
+# Both IP addresses and DNS names can be used. Multiple servers can be
+# specified in one line, separated by commas. If this parameter used more
+# than once, servers listed in all occurences will have access to agent.
+#
+# Examples:
+# Servers = 10.0.0.1
+# Servers = 127.0.0.1, srv1.domain.com, srv2.domain.com
+
+#
+# ControlServers
+#
+# List of management servers which can execute actions on agent. Hosts
+# listed in this parameter also have read access to the agent. Both
+# IP addresses and DNS names can be used. Multiple servers can be specified
+# in one line, separated by commas. If this parameter used more than
+# once, servers listed in all occurences will have access to agent.
+#
+# Examples:
+# ControlServers = 10.0.0.1
+# ControlServers = 127.0.0.1, srv1.domain.com, srv2.domain.com
+
+#
+# MasterServers
+#
+# List of management servers which have full access to agent. Hosts listed
+# in this group can change agent's config, upload files to agent and initiate
+# agent upgrade, as well as perform any task allowed for hosts listed in
+# Servers and ControlServers. Both IP addresses and DNS names can be used.
+# Multiple servers can be specified in one line, separated by commas.
+# If this parameter used more than once, servers listed in all occurences
+# will have access to agent.
+#
+# Examples:
+# MasterServers = 10.0.0.1
+# MasterServers = 127.0.0.1, srv1.domain.com, srv2.domain.com
+
+#
+# ListenPort
+#
+# Defines the port number for the agent to listen on incoming connections.
+# Default values is 4700
+#
+# Examples:
+# ListenPort = 4700
+
+#
+# LogFile
+#
+# Agent's log file. To write log to syslog (or Event Log on Windows),
+# use {syslog} as file name.
+#
+# Examples:
+# LogFile = {syslog}
+# LogFile = /var/log/nxagentd.log
+
+#
+# RequireAuthentication
+#
+# If set to "yes", host connected to agent have to provide correct shared
+# secret before issuing any command. Default value is "no".
+#
+# Example:
+# RequireAuthentication = no
+
+#
+# RequireEncryption
+#
+# If set to "yes", host connected to agent will be forced to use encryption,
+# and if encryption is not supported by remote host, connection will be 
+# dropped. Default value is "no". This parameter has no effect if agent
+# was compiled without encryption support.
+#
+# Example:
+# RequireEncryption = no
+
+#
+# EnabledCiphers
+#
+# Control what ciphers agent can use for connection encryption. Value for
+# this parameter is a cipher code. To enable more than one cipher, they
+# codes should be added. By default, all possible ciphers are enabled.
+#
+# Possible cipher codes:
+#	1  =  AES-256
+#	2  =  BLOWFISH
+#	4  =  IDEA
+#       8  =  Triple DES
+#
+# Example (enable AES-256 and IDEA):
+# EnabledCiphers = 5
+
+#
+# SharedSecret
+#
+# Agent's shared secret. Used only if RequireAuthentication set to "yes".
+#
+# Example:
+# SharedSecret = secret
+
+#
+# MaxSessions
+#
+# Maximum number of simultaneous communication sessions. Possible value can
+# be in range from 2 to 1024. Default value is 32.
+#
+# Example:
+# MaxSessions = 32
+
+#
+# SessionIdleTimeout
+#
+# Communication session's idle timeout in seconds. If agent will not receive
+# any command from peer within specified timeout, session will be closed.
+# Default value is 60 seconds.
+#
+# Example:
+# SessionIdleTimeout = 60
+
+#
+# FileStore
+#
+# Directory to be used for storing files uploaded by installation server(s).
+#
+# Example:
+# FileStore = /var/nxagentd
+
+#
+# TimeOut
+#
+# GET request timeout in seconds. If GET request cannot be completed for
+# specified amount of time, agent will return an error to server.
+# Default value is 5 seconds.
+#
+# Example:
+# TimeOut = 5
+
+#
+# StartupDelay
+#
+# Number of seconds agent should wait on startup before start servicing
+# requests. This parameter can be useful to prevent false reports about
+# missing processes or failed services just after monitored system startup.
+# Default value is 0, i.e. no startup delay.
+#
+# Example:
+# StartupDelay = 0
+
+#
+# PlatformSuffix
+#
+# String to be added as suffix to value of System.PlatformName parameter.
+#
+# Example:
+# PlatformSuffix = dbg
+
+#
+# EnableSubagentAutoload
+#
+# Enable or disable autoloading of platform subagent(s).
+# Default value is "yes".
+#
+# Example:
+# EnableSubagentAutoload = yes
+
+#
+# EnableProxy
+#
+# Allow requests forwarding
+# Default value is "no"
+#
+# Example:
+# EnableProxy = no
+
+#
+# EnableSNMPProxy
+#
+# Allow SNMP requests forwarding
+# Default value is "no"
+#
+# Example:
+# EnableSNMPProxy = no
+
+#
+# SubAgent
+#
+# Subagent to load. To load multiple subagents, you should use multiple
+# SubAgent parameters. Subagents will be loaded in the same order as they
+# appears in configuration file.
+#
+# UNIX example:
+# SubAgent = [path_to_netxms_install_dir]/lib/libnsm_linux.so
+#
+# Windows example:
+# SubAgent = winperf.nsm
+
+#
+# ExternalParameter
+#
+# Add parameter handled by external command. To add multiple parameters, you
+# should use multiple ExternalParameter entries. Please note that on Windows
+# agent uses system process execution API for execution of specified
+# command, so you cannot use pipes or shell commands. If you need to
+# execute command via shell, use ExternalParameterShellExec instead.
+# 
+# Syntax:
+# ExternalParameter = <parameter_name>:<command_line>
+# If you specify parameter name as "name(*)", then you can use $1 .. $9 in
+# command line to substitute actual arguments passed from server.
+#
+# Examples:
+# ExternalParameter = Test:echo test
+# ExternalParameter = LineCount(*):cat $1 | wc -l
+# ExternalParameter = Test2(*):myprog $1 $2
+
+#
+# ExternalParameterShellExec
+#
+# Add parameter handled by external command. To add multiple parameters, you
+# should use multiple ExternalParameterShellExec entries. This is similar
+# to ExternalParameter with exception that agent will use shell to execute
+# specified command instead of system process exeution API. This difference
+# presented only on Windows system, on other systems ExternalParameter and
+# ExternalParameterShellExec behaves identically.
+# 
+# Syntax:
+# ExternalParameterShellExec = <parameter_name>:<command_line>
+# If you specify parameter name as "name(*)", then you can use $1 .. $9 in
+# command line to substitute actual arguments passed from server.
+#
+# Examples:
+# ExternalParameterShellExec = Test:dir c:\ | wc -l
