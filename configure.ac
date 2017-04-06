@@ -363,6 +363,48 @@ AC_ARG_WITH(odbc,
 	DBDRIVER_SELECTED="yes"
 fi ])
 
+AC_ARG_WITH(ocilib,
+[AS_HELP_STRING(--with-ocilib,build OCILib database driver)],
+[ if test "x$withval" != "xno" ; then
+	OCIBASE="$OCILIB_PATH"
+	ORABASE="$LD_LIBRARY_PATH"
+	if test "x$withval" != "x" && test "x$withval" != "xyes" ; then
+		OCIBASE="$withval"
+	fi
+	if test "x$OCIBASE" != "x"; then
+		if test -x "$OCIBASE/lib" ; then
+			OCILIB_LD_RUN_PATH="${OCIBASE}/lib"
+			OCILIB_LDFLAGS="-L${OCIBASE}/lib"
+		else
+			OCILIB_LD_RUN_PATH="${OCIBASE}"
+			OCILIB_LDFLAGS="-L${OCIBASE}"
+		fi
+		if test -x "$OCIBASE/include" ; then
+			OCILIB_CPPFLAGS="-I${OCIBASE}/include"
+		fi
+	fi
+	if test "x$ORABASE" != "x"; then
+		if test -x "$ORABASE/lib"; then
+			OCILIB_LD_RUN_PATH="${OCILIB_LD_RUN_PATH}${ORABASE}/lib"
+			OCILIB_LDFLAGS="${OCILIB_LDFLAGS} -L${ORABASE}/lib"
+		else
+			OCILIB_LD_RUN_PATH="${OCILIB_LD_RUN_PATH}${ORABASE}"
+			OCILIB_LDFLAGS="${OCILIB_LDFLAGS} -L${ORABASE}"
+		fi
+		if test -x "$ORABASE/include" ; then
+			OCILIB_CPPFLAGS="${OCILIB_CPPFLAGS} -I${ORABASE}/include"
+		fi
+		if test -x "$ORABASE/sdk/include" ; then
+			OCILIB_CPPFLAGS="${OCILIB_CPPFLAGS} -I${ORABASE}/sdk/include"
+		fi
+		if test -x "$ORABASE/rdbms/public" ; then
+			OCILIB_CPPFLAGS="${OCILIB_CPPFLAGS} -I${ORABASE}/rdbms/public"
+		fi
+	fi
+	COMPONENTS="$COMPONENTS ocilib"
+	DBDRIVER_SELECTED="yes"
+fi ])
+
 AC_ARG_WITH(oracle,
 [AS_HELP_STRING(--with-oracle,build Oracle database driver)],
 [ if test "x$withval" != "xno" ; then
@@ -639,7 +681,7 @@ AC_ARG_ENABLE(64bit,
 
 AC_ARG_WITH(dist,
 [AS_HELP_STRING(--with-dist,for maintainers only)],
-	DB_DRIVERS=" mysql pgsql odbc mssql sqlite oracle db2 informix"
+	DB_DRIVERS=" mysql pgsql odbc mssql sqlite oracle ocilib db2 informix"
 	MODULES="appagent jansson libexpat libstrophe libtre zlib libnetxms install sqlite snmp libnxsl libnxmb libnxlp libnxcc db server smsdrv agent libnxmap client nxscript nxcproxy nxlptest tools"
 	SUBAGENT_DIRS="linux ds18x20 freebsd openbsd minix mqtt mysql netbsd sunos aix ipso hpux odbcquery informix oracle lmsensors darwin rpi java jmx bind9 ubntlw netsvc db2 tuxedo mongodb ssh vmgr"
 	AGENT_DIRS="libnxtux"
@@ -895,6 +937,11 @@ fi
 check_substr "$COMPONENTS" "odbc"
 if test $? = 0; then
 	DB_DRIVERS="$DB_DRIVERS odbc"
+fi
+
+check_substr "$COMPONENTS" "ocilib"
+if test $? = 0; then
+	DB_DRIVERS="$DB_DRIVERS ocilib"
 fi
 
 check_substr "$COMPONENTS" "oracle"
@@ -2868,6 +2915,43 @@ if test $? = 0; then
 	LD_RUN_PATH="$OLD_LD_RUN_PATH"
 fi
 
+#--------------------------------------------------------------------
+# OCILib
+#--------------------------------------------------------------------
+
+check_substr "$COMPONENTS" "ocilib"
+if test $? = 0; then
+	OLD_CPPFLAGS="$CPPFLAGS"
+	OLD_LDFLAGS="$LDFLAGS"
+	OLD_LD_RUN_PATH="$LD_RUN_PATH"
+
+	CPPFLAGS="$CPPFLAGS $OCILIB_CPPFLAGS"
+	LDFLAGS="$LDFLAGS $OCILIB_LDFLAGS"
+	if test "x$OCILIB_LD_RUN_PATH" != "x"; then
+		LD_RUN_PATH="${OCILIB_LD_RUN_PATH}${LD_RUN_PATH:+:}${LD_RUN_PATH}"
+	fi
+
+	AC_CHECK_HEADER(ocilib.h,,AC_MSG_ERROR([*** Cannot find ocilib.h - check your OCILib installation ***]))
+	AC_CHECK_HEADER(oci.h,,AC_MSG_ERROR([*** Cannot find oci.h - check your Oracle client installation ***]))
+	AC_CHECK_LIB(ocilib, OCI_Initialize, [OCILIB_LIBS=-locilib], [])
+	AC_CHECK_LIB(nnz12, nzstrcpy, [NNZ_LIB=-lnnz12],
+		[
+			AC_CHECK_LIB(nnz11, nzstrcpy, [NNZ_LIB=-lnnz11],
+				[
+					AC_CHECK_LIB(nzz10, nzstrcpy, [NNZ_LIB=-lnnz10], [], [-lclntsh])
+				], [-lclntsh])
+		], [-lclntsh])
+	AC_CHECK_LIB(clntsh, OCIHandleAlloc, [OCILIB_LIBS="-lclntsh $NNZ_LIB"],
+		[AC_MSG_ERROR(libclntsh is required for Oracle support)], [$NNZ_LIB])
+	AC_CHECK_LIB(rt, sem_destroy, [OCILIB_LIBS="$OCILIB_LIBS -lrt"], [])
+	if test "x$BUILD_STATIC_AGENT" = "xyes"; then
+		SUBAGENT_LIBS="$SUBAGENT_LIBS $OCILIB_LIBS"
+	fi
+
+	CPPFLAGS="$OLD_CPPFLAGS"
+	LDFLAGS="$OLD_LDFLAGS"
+	LD_RUN_PATH="$OLD_LD_RUN_PATH"
+fi
 
 #--------------------------------------------------------------------
 # Oracle
@@ -3266,6 +3350,9 @@ AC_SUBST(MYSQL_LIBS)
 AC_SUBST(PGSQL_CPPFLAGS)
 AC_SUBST(PGSQL_LDFLAGS)
 AC_SUBST(PGSQL_LIBS)
+AC_SUBST(OCILIB_CPPFLAGS)
+AC_SUBST(OCILIB_LDFLAGS)
+AC_SUBST(OCILIB_LIBS)
 AC_SUBST(ORACLE_CPPFLAGS)
 AC_SUBST(ORACLE_LDFLAGS)
 AC_SUBST(ORACLE_LIBS)
@@ -3430,6 +3517,7 @@ AC_CONFIG_FILES([
 	src/db/dbdrv/odbc/Makefile
 	src/db/dbdrv/mssql/Makefile
 	src/db/dbdrv/mysql/Makefile
+	src/db/dbdrv/ocilib/Makefile
 	src/db/dbdrv/oracle/Makefile
 	src/db/dbdrv/pgsql/Makefile
 	src/db/dbdrv/sqlite/Makefile
@@ -3696,6 +3784,16 @@ if test "x${PGSQL_LDFLAGS}" != "x"; then
 fi
 if test "x${PGSQL_LIBS}" != "x"; then
 	echo "PostgreSQL LIBS         : ${PGSQL_LIBS}"
+fi
+
+if test "x${OCILIB_CPPFLAGS}" != "x"; then
+	echo "OCILib CPPFLAGS         : ${OCILIB_CPPFLAGS}"
+fi
+if test "x${OCILIB_LDFLAGS}" != "x"; then
+	echo "OCILib LDFLAGS          : ${OCILIB_LDFLAGS}"
+fi
+if test "x${OCILIB_LIBS}" != "x"; then
+	echo "OCILib LIBS             : ${OCILIB_LIBS}"
 fi
 
 if test "x${ORACLE_CPPFLAGS}" != "x"; then

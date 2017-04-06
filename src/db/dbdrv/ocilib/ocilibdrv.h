@@ -1,5 +1,5 @@
 /* $Id$ */
-/** Oracle Database Driver
+/** OCILib Database Driver
 ** Copyright (C) 2007-2015 Victor Kirhenshtein
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -16,12 +16,12 @@
 ** along with this program; if not, write to the Free Software
 ** Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 **
-** File: oracledrv.h
+** File: ocilibdrv.h
 **
 **/
 
-#ifndef _oracledrv_h_
-#define _oracledrv_h_
+#ifndef _ocilibdrv_h_
+#define _ocilibdrv_h_
 
 #ifdef _WIN32
 
@@ -36,10 +36,13 @@
 #define EXPORT
 #endif   /* _WIN32 */
 
+#define OCI_CHARSET_UNICODE
+
 #include <nms_common.h>
 #include <nms_util.h>
 #include <dbdrv.h>
 #include <oci.h>
+#include <ocilib.h>
 
 /**
  * Fetch buffer
@@ -58,6 +61,7 @@ struct ORACLE_FETCH_BUFFER
  */
 struct ORACLE_CONN
 {
+   OCI_Connection *handleConnection;
 	OCIServer *handleServer;
 	OCISvcCtx *handleService;
 	OCISession *handleSession;
@@ -81,7 +85,7 @@ private:
    int m_allocated;
    int m_elementSize;
    bool m_string;
-   UCS2CHAR **m_strings;
+   WCHAR **m_strings;
    void *m_data;
 
 public:
@@ -102,7 +106,7 @@ public:
 struct ORACLE_STATEMENT
 {
 	ORACLE_CONN *connection;
-	OCIStmt *handleStmt;
+	OCI_Statement *handleStmt;
 	OCIError *handleError;
 	Array *bindings;
    ObjectArray<OracleBatchBind> *batchBindings;
@@ -125,7 +129,7 @@ struct ORACLE_RESULT
 struct ORACLE_UNBUFFERED_RESULT
 {
    ORACLE_CONN *connection;
-   OCIStmt *handleStmt;
+   OCI_Statement *handleStmt;
    ORACLE_FETCH_BUFFER *pBuffers;
    int nCols;
    char **columnNames;
@@ -150,4 +154,4 @@ struct OCI_PARAM_STRUCT
    OCI_PARAM_STRUCT_COLUMN_INFO *columnInfo;
 };
 
-#endif   /* _oracledrv_h_ */
+#endif   /* _ocilibdrv_h_ */
