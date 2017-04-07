@@ -150,7 +150,8 @@ static void GetErrorFromHandle(sb4 *errorCode, WCHAR *errorText)
 	ucs4_to_ucs2(OCI_ErrorGetString(handle) , ucs4_strlen(OCI_ErrorGetString(handle)) + 1, errorText, DBDRV_MAX_ERROR_TEXT);
 	errorText[DBDRV_MAX_ERROR_TEXT - 1] = 0;
 #else
-	wcsncpy(errorText, OCI_ErrorGetString(handle), DBDRV_MAX_ERROR_TEXT);
+	if(handle != NULL)
+		wcsncpy(errorText, OCI_ErrorGetString(handle), DBDRV_MAX_ERROR_TEXT);
 #endif
 	RemoveTrailingCRLFW(errorText);
 }
@@ -1223,67 +1224,23 @@ static ORACLE_UNBUFFERED_RESULT *ProcessUnbufferedQueryResults(ORACLE_CONN *pCon
 
 	*pdwError = DBERR_SUCCESS;
 
-	if(result->nCols > 0)
+	if(resultSet != NULL)
 	{
-		result->columnNames = (char **)calloc(result->nCols, sizeof(char *));
-		result->pBuffers = (ORACLE_FETCH_BUFFER *)calloc(result->nCols, sizeof(ORACLE_FETCH_BUFFER));
-
-		for(int i = 0; i < result->nCols; i++)
+		if(result->nCols > 0)
 		{
-			OCI_Column *col = OCI_GetColumn(resultSet, i + 1);
-			result->columnNames[i] = MBStringFromWideString(OCI_ColumnGetName(col));
+			result->columnNames = (char **)calloc(result->nCols, sizeof(char *));
+			result->pBuffers = (ORACLE_FETCH_BUFFER *)calloc(result->nCols, sizeof(ORACLE_FETCH_BUFFER));
 
-			if(OCI_ColumnGetType(col) != OCI_CDT_LOB)
+			for(int i = 0; i < result->nCols; i++)
 			{
-				ub2 nWidth = OCI_GetDataSize(resultSet, i + 1);
-				result->pBuffers[i].pData = (UCS2CHAR *)malloc((nWidth + 31) * sizeof(UCS2CHAR));
-
-				UCS2CHAR *ucs2string = UCS2StringFromUCS4String(OCI_GetString(resultSet, i + 1));
-				int len = ucs2_strlen(ucs2string);
-
-				memcpy(result->pBuffers[i].pData, ucs2string, len);
-				result->pBuffers[i].isNull = 0;
-				result->pBuffers[i].nLength = nWidth;
-				free(ucs2string);
+				OCI_Column *col = OCI_GetColumn(resultSet, i + 1);
+				result->columnNames[i] = MBStringFromWideString(OCI_ColumnGetName(col));
 			}
-			else
-			{
-				OCI_Lob *lob = OCI_GetLob(resultSet, i + 1);
-				if(lob != NULL)
-				{
-					ub2 nWidth = OCI_LobGetLength(lob);
-
-					if(nWidth > 0)
-					{
-						unsigned int max_len = nWidth, max_byte = 0;
-						result->pBuffers[i].pData = NULL;
-						WCHAR *pLob = (WCHAR*)malloc((nWidth + 1) * sizeof(WCHAR));
-
-						if(OCI_LobRead2(lob, (WCHAR*)pLob, (unsigned int*)&max_len, (unsigned int*)&max_byte))
-						{
-							UCS2CHAR *ucs2lob = UCS2StringFromUCS4String(pLob);
-							int len = ucs2_strlen(ucs2lob);
-
-							memcpy(result->pBuffers[i].pData, ucs2lob, len);
-							result->pBuffers[i].isNull = 0;
-							result->pBuffers[i].nLength = nWidth;
-							free(ucs2lob);
-						}
-						else
-						{
-							SetLastError(pConn);
-							*pdwError = IsConnectionError(pConn);
-						}
-
-						free(pLob);
-					}
-				}
-				else
-				{
-					SetLastError(pConn);
-					*pdwError = IsConnectionError(pConn);
-				}
-			}
+		}
+		else
+		{
+			free(result);
+			result = NULL;
 		}
 	}
 	else
@@ -1305,9 +1262,8 @@ extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectUnbuffered(ORACLE_CONN *pConn
 	MutexLock(pConn->mutexQueryLock);
 
 	OCI_Statement *handleStmt = OCI_StatementCreate(pConn->handleConnection);
-	char *c2Query = MBStringFromWideString(pwszQuery);
 
-	if(OCI_Prepare(handleStmt, (otext *)c2Query) == true)
+	if(OCI_Prepare(handleStmt, (otext *)pwszQuery) == true)
 	{	
 		OCI_SetPrefetchSize(handleStmt, pConn->prefetchLimit);
 
@@ -1326,7 +1282,6 @@ extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectUnbuffered(ORACLE_CONN *pConn
 		SetLastError(pConn);
 		*pdwError = IsConnectionError(pConn);
 	}
-	free(c2Query);
 
 	if((*pdwError == DBERR_SUCCESS) && (result != NULL))
 		return result;
@@ -1385,7 +1340,69 @@ extern "C" bool EXPORT DrvFetch(ORACLE_UNBUFFERED_RESULT *result)
 	OCI_Resultset *resultSet = OCI_GetResultset(result->handleStmt);
 
 	if(OCI_FetchNext(resultSet) == true)
+	{
 		success = true;
+
+		for(int i = 0; i < result->nCols; i++)
+		{
+			OCI_Column *col = OCI_GetColumn(resultSet, i + 1);
+
+			if(OCI_IsNull(resultSet, i + 1) == true)
+			{
+				result->pBuffers[i].pData = (UCS2CHAR *)nx_memdup("\0\0\0", sizeof(UCS2CHAR));
+			}
+			else if(OCI_ColumnGetType(col) != OCI_CDT_LOB)
+			{
+				UCS2CHAR *ucs2string = UCS2StringFromUCS4String(OCI_GetString(resultSet, i + 1));
+				int len = ucs2_strlen(ucs2string);
+
+				result->pBuffers[i].pData = (UCS2CHAR *)malloc((len + 31) * sizeof(UCS2CHAR));
+				memcpy(result->pBuffers[i].pData, ucs2string, len * sizeof(UCS2CHAR));
+				result->pBuffers[i].isNull = 0;
+				result->pBuffers[i].nLength = len * sizeof(UCS2CHAR);
+
+				free(ucs2string);
+			}
+			else
+			{
+				OCI_Lob *lob = OCI_GetLob(resultSet, i + 1);
+				if(lob != NULL)
+				{
+					ub2 nWidth = OCI_LobGetLength(lob);
+
+					if(nWidth > 0)
+					{
+						unsigned int max_len = nWidth, max_byte = 0;
+						result->pBuffers[i].pData = NULL;
+						WCHAR *pLob = (WCHAR*)malloc((nWidth + 1) * sizeof(WCHAR));
+
+						if(OCI_LobRead2(lob, (WCHAR*)pLob, (unsigned int*)&max_len, (unsigned int*)&max_byte))
+						{
+							UCS2CHAR *ucs2lob = UCS2StringFromUCS4String(pLob);
+							int len = ucs2_strlen(ucs2lob);
+
+							memcpy(result->pBuffers[i].pData, ucs2lob, len);
+							result->pBuffers[i].isNull = 0;
+							result->pBuffers[i].nLength = max_len * sizeof(UCS2CHAR);
+							free(ucs2lob);
+						}
+						else
+						{
+							SetLastError(result->connection);
+							success = false;
+						}
+
+						free(pLob);
+					}
+				}
+				else
+				{
+					SetLastError(result->connection);
+					success = false;
+				}
+			}
+		}
+	}
 	else
 	{
 		SetLastError(result->connection);
@@ -1407,13 +1424,6 @@ extern "C" LONG EXPORT DrvGetFieldLengthUnbuffered(ORACLE_UNBUFFERED_RESULT *res
 
 	if(result->pBuffers[nColumn].isNull)
 		return 0;
-
-	//if(result->pBuffers[nColumn].lobLocator != NULL)
-	//{
-	//	ub4 length = 0;
-	//	GetLength();
-	//	return (LONG)length;
-	//}
 
 	return (LONG)(result->pBuffers[nColumn].nLength / sizeof(UCS2CHAR));
 }

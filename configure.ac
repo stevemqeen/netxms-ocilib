@@ -2941,7 +2941,7 @@ if test $? = 0; then
 					AC_CHECK_LIB(nzz10, nzstrcpy, [NNZ_LIB=-lnnz10], [], [-lclntsh])
 				], [-lclntsh])
 		], [-lclntsh])
-	AC_CHECK_LIB(clntsh, OCIHandleAlloc, [OCILIB_LIBS="-lclntsh $NNZ_LIB"],
+	AC_CHECK_LIB(clntsh, OCIHandleAlloc, [OCILIB_LIBS="$OCILIB_LIBS -lclntsh $NNZ_LIB"],
 		[AC_MSG_ERROR(libclntsh is required for Oracle support)], [$NNZ_LIB])
 	AC_CHECK_LIB(rt, sem_destroy, [OCILIB_LIBS="$OCILIB_LIBS -lrt"], [])
 	if test "x$BUILD_STATIC_AGENT" = "xyes"; then
