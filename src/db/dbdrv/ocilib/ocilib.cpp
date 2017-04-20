@@ -1203,6 +1203,16 @@ static void DestroyUnbufferedQueryResult(ORACLE_UNBUFFERED_RESULT *result, bool 
 		OCI_StatementFree(result->handleStmt);
 
 	for(i = 0; i < result->nCols; i++)
+	{
+		free(result->pBuffers[i].pData);
+		if (result->pBuffers[i].lobLocator != NULL) // this maybe not needed anymore
+		{
+			free(result->pBuffers[i].lobLocator);
+		}
+	}
+	free(result->pBuffers);
+
+	for(i = 0; i < result->nCols; i++)
 		free(result->columnNames[i]);
 	free(result->columnNames);
 	free(result);
@@ -1488,6 +1498,7 @@ extern "C" void EXPORT DrvFreeUnbufferedResult(ORACLE_UNBUFFERED_RESULT *result)
 		return;
 
 	MUTEX mutex = result->connection->mutexQueryLock;
+	MutexLock(mutex);
 	DestroyUnbufferedQueryResult(result, true);
 	MutexUnlock(mutex);
 }
