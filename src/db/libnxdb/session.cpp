@@ -1085,6 +1085,11 @@ uuid LIBNXDB_EXPORTABLE DBGetFieldGUID(DB_UNBUFFERED_RESULT hResult, int iColumn
    return (DBGetField(hResult, iColumn, buffer, 64) == NULL) ? uuid::NULL_UUID : uuid::parse(buffer);
 }
 
+void LIBNXDB_EXPORTABLE DBFetchFreeResult(DB_UNBUFFERED_RESULT hResult)
+{
+   hResult->m_driver->m_fpDrvFetchFreeResult(hResult->m_data);
+}
+
 /**
  * Free unbuffered SELECT result
  */

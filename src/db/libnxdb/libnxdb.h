@@ -71,6 +71,7 @@ struct db_driver_t
 	int (* m_fpDrvGetNumRows)(DBDRV_RESULT);
 	void (* m_fpDrvFreeResult)(DBDRV_RESULT);
 	void (* m_fpDrvFreeUnbufferedResult)(DBDRV_UNBUFFERED_RESULT);
+	void (* m_fpDrvFetchFreeResult)(DBDRV_UNBUFFERED_RESULT);
 	DWORD (* m_fpDrvBegin)(DBDRV_CONNECTION);
 	DWORD (* m_fpDrvCommit)(DBDRV_CONNECTION);
 	DWORD (* m_fpDrvRollback)(DBDRV_CONNECTION);
