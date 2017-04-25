@@ -770,6 +770,8 @@ extern "C" DWORD EXPORT DrvExecute(ORACLE_CONN *pConn, ORACLE_STATEMENT *stmt, W
 			return DBERR_SUCCESS;   // empty batch
 		}
 
+		OCI_BindArraySetSize(stmt->handleStmt, stmt->batchSize);
+
 		for(int i = 0; i < stmt->batchBindings->size(); i++)
 		{
 			OracleBatchBind *b = stmt->batchBindings->get(i);
@@ -784,7 +786,8 @@ extern "C" DWORD EXPORT DrvExecute(ORACLE_CONN *pConn, ORACLE_STATEMENT *stmt, W
 				case SQLT_LNG:
 				case SQLT_STR:
 					{
-						OCI_BindString(stmt->handleStmt, bindPos, (otext *)b->getData(), 0);
+						unsigned int m_dataLen = (b->getElementSize() / sizeof(WCHAR) - 1); // maximum length of single string element
+						OCI_BindArrayOfStrings(stmt->handleStmt, bindPos, (otext *)b->getData(), m_dataLen, 0);
 					}
 					break;
 				case SQLT_INT:
@@ -792,13 +795,13 @@ extern "C" DWORD EXPORT DrvExecute(ORACLE_CONN *pConn, ORACLE_STATEMENT *stmt, W
 						switch(b->getCType())
 						{
 							case DB_CTYPE_INT32:
-								OCI_BindInt(stmt->handleStmt, bindPos, (int*)b->getData());
+								OCI_BindArrayOfInts(stmt->handleStmt, bindPos, (int*)b->getData(), 0);
 								break;
  							case DB_CTYPE_UINT32:
- 								OCI_BindUnsignedInt(stmt->handleStmt, bindPos, (unsigned int*)b->getData());
+ 								OCI_BindArrayOfUnsignedInts(stmt->handleStmt, bindPos, (unsigned int*)b->getData(), 0);
  								break;
  							case DB_CTYPE_DOUBLE:
- 								OCI_BindDouble(stmt->handleStmt, bindPos, (double*)b->getData());
+ 								OCI_BindArrayOfDoubles(stmt->handleStmt, bindPos, (double*)b->getData(), 0);
  								break;
 						}
 					}
