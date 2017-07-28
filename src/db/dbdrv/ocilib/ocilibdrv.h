@@ -109,6 +109,7 @@ struct ORACLE_STATEMENT
 	OCI_Statement *handleStmt;
 	OCIError *handleError;
 	Array *bindings;
+   Array *lobBinds;
    ObjectArray<OracleBatchBind> *batchBindings;
 	Array *buffers;
    bool batchMode;

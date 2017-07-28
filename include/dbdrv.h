@@ -103,6 +103,7 @@ typedef void * DBDRV_UNBUFFERED_RESULT;
 #define DB_SQLTYPE_BIGINT     2
 #define DB_SQLTYPE_DOUBLE     3
 #define DB_SQLTYPE_TEXT       4
+#define DB_SQLTYPE_CLOB       5
 
 /**
  * DBIsTableExist return codes

@@ -359,6 +359,7 @@ extern "C" ORACLE_STATEMENT EXPORT *DrvPrepare(ORACLE_CONN *pConn, WCHAR *pwszQu
 		stmt->connection = pConn;
 		stmt->handleStmt = handleStmt;
 		stmt->bindings = new Array(8, 8, false);
+		stmt->lobBinds = new Array(8, 8, false);
 		stmt->batchBindings = NULL;
 		stmt->buffers = new Array(8, 8, true);
 		stmt->batchMode = false;
@@ -432,7 +433,6 @@ static ub2 s_oracleType[] = { SQLT_STR, SQLT_INT, SQLT_UIN, SQLT_INT, SQLT_UIN, 
  */
 static void BindNormal(ORACLE_STATEMENT *stmt, int pos, int sqlType, int cType, void *buffer, int allocType)
 {
-	OCI_Bind *handleBind = (OCI_Bind *)stmt->bindings->get(pos - 1);
 	void *sqlBuffer;
 	WCHAR bindPos[8]={0};
 	swprintf(bindPos, 8, L":%d", pos);
@@ -460,7 +460,15 @@ static void BindNormal(ORACLE_STATEMENT *stmt, int pos, int sqlType, int cType, 
 				stmt->buffers->set(pos - 1, sqlBuffer);
 		}
 #endif
-		OCI_BindString(stmt->handleStmt, bindPos, (otext *)sqlBuffer, 0);
+		if(sqlType == DB_SQLTYPE_CLOB)
+		{	
+			OCI_Lob *lob = OCI_LobCreate(stmt->connection->handleConnection, OCI_CLOB);
+			OCI_LobWrite(lob, (otext *)sqlBuffer, _tcslen((WCHAR *)sqlBuffer));
+			OCI_BindLob(stmt->handleStmt, bindPos, lob);
+			stmt->lobBinds->set(pos - 1, lob);
+		}
+		else
+			OCI_BindString(stmt->handleStmt, bindPos, (otext *)sqlBuffer, 0);
 		}
 		break;
 		case DB_CTYPE_UTF8_STRING:
@@ -693,7 +701,7 @@ static void BindBatch(ORACLE_STATEMENT *stmt, int pos, int sqlType, int cType, v
 			{
 				sqlBuffer = wcsdup((WCHAR *)buffer);
 			}
-#endif
+#endif			
          	bind->set(sqlBuffer);
          	}
 			break;
@@ -850,7 +858,17 @@ extern "C" void EXPORT DrvFreeStatement(ORACLE_STATEMENT *stmt)
 	MutexLock(stmt->connection->mutexQueryLock);
 	OCI_StatementFree(stmt->handleStmt);
 	MutexUnlock(stmt->connection->mutexQueryLock);
+
+	for(int i = 0; i < stmt->lobBinds->size(); i++)
+	{
+		OCI_Lob *lob = (OCI_Lob *)stmt->lobBinds->get(i);
+
+		if(lob != NULL)
+			OCI_LobFree(lob);
+	}
+
 	delete stmt->bindings;
+	delete stmt->lobBinds;
 	delete stmt->batchBindings;
 	delete stmt->buffers;
 	free(stmt);
@@ -1003,6 +1021,10 @@ static ORACLE_RESULT *ProcessQueryResults(ORACLE_CONN *pConn, OCI_Statement *han
 								}
 								free(result);							
 							}
+							else
+							{
+								pResult->pData[nPos] = (WCHAR *)nx_memdup("\0\0\0", sizeof(WCHAR));
+							}
 						}
 						else
 						{
@@ -1054,16 +1076,13 @@ extern "C" DBDRV_RESULT EXPORT DrvSelect(ORACLE_CONN *pConn, WCHAR *pwszQuery, D
 	ORACLE_RESULT *pResult = NULL;
 	OCI_Statement *handleStmt = OCI_StatementCreate(pConn->handleConnection);
 
-	OCI_SetFetchSize(handleStmt, 1);
-	OCI_SetPrefetchSize(handleStmt, 0);
-	OCI_SetPrefetchMemory(handleStmt, 0);
-	OCI_SetStatementCacheSize(pConn->handleConnection, 1);
-
 #if UNICODE_UCS4
 	char *ucs2Query = MBStringFromWideString(pwszQuery);
 #else
 	const UCS2CHAR *ucs2Query = pwszQuery;
 #endif
+
+	OCI_SetPrefetchSize(handleStmt, pConn->prefetchLimit);
 
 	MutexLock(pConn->mutexQueryLock);
 	if(OCI_ExecuteStmt(handleStmt, pwszQuery) == true)
@@ -1098,6 +1117,8 @@ extern "C" DBDRV_RESULT EXPORT DrvSelect(ORACLE_CONN *pConn, WCHAR *pwszQuery, D
 extern "C" DBDRV_RESULT EXPORT DrvSelectPrepared(ORACLE_CONN *pConn, ORACLE_STATEMENT *stmt, DWORD *pdwError, WCHAR *errorText)
 {
 	ORACLE_RESULT *pResult = NULL;
+
+	OCI_SetPrefetchSize(stmt->handleStmt, pConn->prefetchLimit);
 
 	MutexLock(pConn->mutexQueryLock);
 	if(OCI_Execute(stmt->handleStmt) == true)
@@ -1330,6 +1351,8 @@ extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectPreparedUnbuffered(ORACLE_CON
 
 	MutexLock(pConn->mutexQueryLock);
 
+	OCI_SetPrefetchSize(stmt->handleStmt, pConn->prefetchLimit);
+
 	if(OCI_Execute(stmt->handleStmt) == true)
 	{
 		result = ProcessUnbufferedQueryResults(pConn, stmt->handleStmt, pdwError);
@@ -1418,6 +1441,10 @@ extern "C" bool EXPORT DrvFetch(ORACLE_UNBUFFERED_RESULT *result)
 						}
 
 						free(pLob);
+					}
+					else
+					{
+						result->pBuffers[i].pData = (UCS2CHAR *)nx_memdup("\0\0\0", sizeof(UCS2CHAR));
 					}
 				}
 				else
