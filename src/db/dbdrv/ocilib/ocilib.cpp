@@ -687,9 +687,13 @@ static void BindBatch(ORACLE_STATEMENT *stmt, int pos, int sqlType, int cType, v
 	switch(bind->getCType())
 	{
 		case DB_CTYPE_STRING:
-			{
+			{			
 #if UNICODE_UCS4
-			sqlBuffer = wcsdup((WCHAR *)buffer);
+			if(_tcslen((WCHAR *)buffer) == 0)
+				sqlBuffer = wcsdup(_T("(null)"));
+			else
+				sqlBuffer = wcsdup((WCHAR *)buffer);
+
          if (allocType == DB_BIND_DYNAMIC)
 				free(buffer);
 #else
@@ -795,7 +799,21 @@ extern "C" DWORD EXPORT DrvExecute(ORACLE_CONN *pConn, ORACLE_STATEMENT *stmt, W
 				case SQLT_STR:
 					{
 						unsigned int m_dataLen = (b->getElementSize() / sizeof(WCHAR) - 1); // maximum length of single string element
+
 						OCI_BindArrayOfStrings(stmt->handleStmt, bindPos, (otext *)b->getData(), m_dataLen, 0);
+
+						// If there is no value for some data, we should bind null instead of empty string
+						unsigned int dataPos = 0;
+						OCI_Bind *bind = OCI_GetBind(stmt->handleStmt, i+1);
+						for(int j = 0; j < stmt->batchSize; j++)
+						{
+							if (!_tcscmp((otext *)b->getData()+dataPos, _T("(null)")))
+							{
+								OCI_BindSetNullAtPos(bind, j+1);
+							}
+
+							dataPos += b->getElementSize() / sizeof(WCHAR);
+						}
 					}
 					break;
 				case SQLT_INT:
