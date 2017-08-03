@@ -650,7 +650,7 @@ void *OracleBatchBind::getData()
       return m_data;
 
    safe_free(m_data);
-   m_data = calloc(m_size, m_elementSize);
+   m_data = calloc(m_size, m_elementSize + 1);
    char *p = (char *)m_data;
    for(int i = 0; i < m_size; i++)
    {
@@ -690,7 +690,7 @@ static void BindBatch(ORACLE_STATEMENT *stmt, int pos, int sqlType, int cType, v
 			{			
 #if UNICODE_UCS4
 			if(_tcslen((WCHAR *)buffer) == 0)
-				sqlBuffer = wcsdup(_T("(null)"));
+				sqlBuffer = wcsdup(_T("\r\n")); // set the end of line symbols
 			else
 				sqlBuffer = wcsdup((WCHAR *)buffer);
 
@@ -798,22 +798,8 @@ extern "C" DWORD EXPORT DrvExecute(ORACLE_CONN *pConn, ORACLE_STATEMENT *stmt, W
 				case SQLT_LNG:
 				case SQLT_STR:
 					{
-						unsigned int m_dataLen = (b->getElementSize() / sizeof(WCHAR) - 1); // maximum length of single string element
-
-						OCI_BindArrayOfStrings(stmt->handleStmt, bindPos, (otext *)b->getData(), m_dataLen, 0);
-
-						// If there is no value for some data, we should bind null instead of empty string
-						unsigned int dataPos = 0;
-						OCI_Bind *bind = OCI_GetBind(stmt->handleStmt, i+1);
-						for(int j = 0; j < stmt->batchSize; j++)
-						{
-							if (!_tcscmp((otext *)b->getData()+dataPos, _T("(null)")))
-							{
-								OCI_BindSetNullAtPos(bind, j+1);
-							}
-
-							dataPos += b->getElementSize() / sizeof(WCHAR);
-						}
+						unsigned int m_dataLen = (b->getElementSize() / sizeof(WCHAR)); // maximum length of single string element
+						OCI_BindArrayOfStrings(stmt->handleStmt, bindPos, (WCHAR*)b->getData(), m_dataLen-1, 0);
 					}
 					break;
 				case SQLT_INT:
@@ -1057,14 +1043,25 @@ static ORACLE_RESULT *ProcessQueryResults(ORACLE_CONN *pConn, OCI_Statement *han
 					{
 						UCS2CHAR *result = UCS2StringFromUCS4String(OCI_GetString(resultSet, i + 1));
 						int length = ucs2_strlen(result);
-						pResult->pData[nPos] = (WCHAR *)malloc((length + 1) * sizeof(WCHAR));
+						bool emptyFlag = false;
+						
+						// If there is only end of string symbols, the result should be empty
+						if(length == 2 && _tcsicmp(OCI_GetString(resultSet, i + 1), _T("\r\n")) == 0)
+							emptyFlag = true;
+
+						if(emptyFlag)
+							pResult->pData[nPos] = (WCHAR *)nx_memdup("\0\0\0", sizeof(WCHAR));
+						else
+						{
+							pResult->pData[nPos] = (WCHAR *)malloc((length + 1) * sizeof(WCHAR));
 #if UNICODE_UCS4
-						ucs2_to_ucs4(result, length, pResult->pData[nPos], length + 1);
+							ucs2_to_ucs4(result, length, pResult->pData[nPos], length + 1);
 #else
-						memcpy(pResult->pData[nPos], result, length);
+							memcpy(pResult->pData[nPos], result, length);
 #endif
-						pResult->pData[nPos][length] = 0;
-						free(result);
+							pResult->pData[nPos][length] = 0;
+							free(result);
+						}
 					}
 					nPos++;
 				}
