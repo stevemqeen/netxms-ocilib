@@ -1047,9 +1047,6 @@ static ORACLE_RESULT *ProcessQueryResults(ORACLE_CONN *pConn, OCI_Statement *han
 						
 						// If there is only end of string symbols, the result should be empty
 						if(length == 2 && _tcsicmp(OCI_GetString(resultSet, i + 1), _T("\r\n")) == 0)
-							emptyFlag = true;
-
-						if(emptyFlag)
 							pResult->pData[nPos] = (WCHAR *)nx_memdup("\0\0\0", sizeof(WCHAR));
 						else
 						{
