@@ -802,6 +802,7 @@ extern "C" DWORD EXPORT DrvExecute(ORACLE_CONN *pConn, ORACLE_STATEMENT *stmt, W
 						OCI_BindArrayOfStrings(stmt->handleStmt, bindPos, (WCHAR*)b->getData(), m_dataLen-1, 0);
 					}
 					break;
+				case SQLT_UIN:
 				case SQLT_INT:
 					{	
 						switch(b->getCType())
@@ -812,14 +813,22 @@ extern "C" DWORD EXPORT DrvExecute(ORACLE_CONN *pConn, ORACLE_STATEMENT *stmt, W
  							case DB_CTYPE_UINT32:
  								OCI_BindArrayOfUnsignedInts(stmt->handleStmt, bindPos, (unsigned int*)b->getData(), 0);
  								break;
- 							case DB_CTYPE_DOUBLE:
- 								OCI_BindArrayOfDoubles(stmt->handleStmt, bindPos, (double*)b->getData(), 0);
- 								break;
+						}
+					}
+					break;
+				case SQLT_FLT:
+					{
+						switch(b->getCType())
+						{
+							case DB_CTYPE_DOUBLE:
+								OCI_BindArrayOfDoubles(stmt->handleStmt, bindPos, (double*)b->getData(), 0);
+								break;
 						}
 					}
 					break;
 				default:
-					break; // invalid call
+					nxlog_debug(6, _T("Error : Unknown type of bind variable, %d"), b->getOraType());
+					break;
 			}
 		}
 	}
