@@ -636,6 +636,18 @@ NXCPMessage LIBNXCC_EXPORTABLE *ClusterSendDirectCommandEx(UINT32 nodeId, NXCPMe
    msg->setId(requestId);
    NXCP_MESSAGE *rawMsg = msg->createMessage();
 
+   if (node->m_socket == INVALID_SOCKET)
+   {
+      NXCPMessage *response = new NXCPMessage();
+      response->setField(VID_RCC, NXCC_RCC_COMM_FAILURE);
+
+      ChangeClusterNodeState(node, CLUSTER_NODE_DOWN);
+      PromoteClusterNode();
+
+      free(rawMsg);
+      return response;
+   }
+
    TCHAR buffer[64];
    ClusterDebug(7, _T("ClusterSendDirectCommandEx: sending message %s (%d) to peer %d [%s]"),
                 NXCPMessageCodeName(msg->getCode(), buffer), msg->getId(),
