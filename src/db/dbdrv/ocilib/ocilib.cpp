@@ -214,7 +214,7 @@ extern "C" DBDRV_CONNECTION EXPORT DrvConnect(const char *host, const char *logi
 		free(szLogin);
 		free(szPassword);
 
-		if(OCI_IsConnected(OCIConn))
+		if(OCIConn && OCI_IsConnected(OCIConn))
 		{
 		    OCI_SetAutoCommit(OCIConn, true);
 
