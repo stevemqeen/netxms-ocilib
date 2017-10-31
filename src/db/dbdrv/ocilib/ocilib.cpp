@@ -1419,6 +1419,8 @@ extern "C" bool EXPORT DrvFetch(ORACLE_UNBUFFERED_RESULT *result)
 			if(OCI_IsNull(resultSet, i + 1) == true)
 			{
 				result->pBuffers[i].pData = (UCS2CHAR *)nx_memdup("\0\0\0", sizeof(UCS2CHAR));
+				result->pBuffers[i].isNull = 1;
+				result->pBuffers[i].nLength = 0;
 			}
 			else if(OCI_ColumnGetType(col) != OCI_CDT_LOB)
 			{
@@ -1466,6 +1468,8 @@ extern "C" bool EXPORT DrvFetch(ORACLE_UNBUFFERED_RESULT *result)
 					else
 					{
 						result->pBuffers[i].pData = (UCS2CHAR *)nx_memdup("\0\0\0", sizeof(UCS2CHAR));
+						result->pBuffers[i].isNull = 1;
+						result->pBuffers[i].nLength = 0;
 					}
 				}
 				else
