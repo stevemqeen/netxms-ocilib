@@ -46,6 +46,15 @@ void LIBNXDB_EXPORTABLE DBSetLongRunningThreshold(UINT32 threshold)
    nxlog_debug(3, _T("DB Library: long running query threshold set to %u"), threshold);
 }
 
+/**
+ * Set reconnect abortion to true, so driver will stop all reconnect operations
+ */
+void LIBNXDB_EXPORTABLE DBAbortReconnect()
+{
+	g_isReconnectAborted = true;
+	nxlog_debug(3, _T("DB Library: aborted reconnect operations"));
+}
+
 #ifdef _WIN32
 
 /**

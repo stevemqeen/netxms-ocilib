@@ -147,5 +147,6 @@ void __DBWriteLog(WORD level, const TCHAR *format, ...);
 extern UINT32 g_logMsgCode;
 extern UINT32 g_sqlErrorMsgCode;
 extern UINT32 g_sqlQueryExecTimeThreshold;
+extern BOOL g_isReconnectAborted;
 
 #endif   /* _libnxsrv_h_ */

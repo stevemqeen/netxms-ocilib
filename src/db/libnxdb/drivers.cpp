@@ -29,6 +29,11 @@ UINT32 g_logMsgCode = 0;
 UINT32 g_sqlErrorMsgCode = 0;
 
 /**
+ * Is reconnect operations aborted
+ */
+BOOL g_isReconnectAborted = false;
+
+/**
  * Long-running query threshold
  */
 UINT32 g_sqlQueryExecTimeThreshold = 0xFFFFFFFF;
