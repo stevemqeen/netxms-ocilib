@@ -101,5 +101,6 @@ extern bool g_nxccNeedSync;
 extern UINT16 g_nxccListenPort;
 extern UINT32 g_nxccCommandTimeout;
 extern ThreadPool *g_nxccThreadPool;
+extern UINT32 g_nxccDBUpdateTimeout;
 
 #endif

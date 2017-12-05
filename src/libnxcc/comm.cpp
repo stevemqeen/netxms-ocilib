@@ -42,7 +42,7 @@ static THREAD_RESULT THREAD_CALL DatabaseUpdateTimestampThread(void *arg);
 static THREAD s_listenerThread = INVALID_THREAD_HANDLE;
 static THREAD s_connectorThread = INVALID_THREAD_HANDLE;
 static THREAD s_keepaliveThread = INVALID_THREAD_HANDLE;
-static THREAD s_databasetimeThread = INVALID_THREAD_HANDLE;
+static THREAD s_databaseTimeThread = INVALID_THREAD_HANDLE;
 
 /**
  * Command ID
@@ -793,7 +793,7 @@ bool LIBNXCC_EXPORTABLE ClusterJoin()
    s_listenerThread = ThreadCreateEx(ClusterListenerThread, 0, CAST_TO_POINTER(s, void *));
    s_connectorThread = ThreadCreateEx(ClusterConnectorThread, 0, NULL);
    s_keepaliveThread = ThreadCreateEx(ClusterKeepaliveThread, 0, NULL);
-   s_databasetimeThread = ThreadCreateEx(DatabaseUpdateTimestampThread, 0, NULL);
+   s_databaseTimeThread = ThreadCreateEx(DatabaseUpdateTimestampThread, 0, NULL);
 
    ClusterDebug(1, _T("ClusterJoin: waiting for other nodes"));
    if (ConditionWait(s_joinCondition, 60000))  // wait 1 minute for other nodes to join
@@ -818,7 +818,7 @@ void ClusterDisconnect()
    ThreadJoin(s_listenerThread);
    ThreadJoin(s_connectorThread);
    ThreadJoin(s_keepaliveThread);
-   ThreadJoin(s_databasetimeThread);
+   ThreadJoin(s_databaseTimeThread);
 }
 
 /**
@@ -845,41 +845,21 @@ bool ClusterGetNodeStateFromDB(ClusterNodeInfo *node)
       _T("VAR_NAME='DBLockInfo.%d' OR ")
       _T("VAR_NAME='DBLockPID.%d' OR ")
       _T("VAR_NAME='DBLockStatus.%d' OR ")
-      _T("VAR_NAME='DBLockTimestamp.%d'"),
+      _T("VAR_NAME='DBLockTimestamp.%d' ORDER BY VAR_NAME ASC"),
       node_id, node_id, node_id, node_id);
    DB_RESULT hResult = DBSelect(hdb, query);
 
    if(hResult != NULL)
    {
-      if (DBGetNumRows(hResult) > 0)
+      if (DBGetNumRows(hResult) >= 3)
       {
          TCHAR lockinfo[255], lockpid[255], lockstatus[255];
          INT32 locktime;
-         TCHAR infocol[64], pidcol[64], statuscol[64], timecol[64];
-         _sntprintf(infocol, 64, _T("DBLockInfo.%d"), node_id);
-         _sntprintf(pidcol, 64, _T("DBLockPID.%d"), node_id);
-         _sntprintf(statuscol, 64, _T("DBLockStatus.%d"), node_id);
-         _sntprintf(timecol, 64, _T("DBLockTimestamp.%d"), node_id);
 
-         for (int i = 0; i < DBGetNumRows(hResult); i++)
-         {
-            if (!_tcscmp(infocol,DBGetField(hResult, i, 0, NULL, 0)))
-            {
-               DBGetField(hResult, i, 1, lockinfo, 255);
-            }
-            else if (!_tcscmp(pidcol, DBGetField(hResult, i, 0, NULL, 0)))
-            {
-               DBGetField(hResult, i, 1, lockpid, 255);
-            }
-            else if (!_tcscmp(statuscol, DBGetField(hResult, i, 0, NULL, 0)))
-            {
-               DBGetField(hResult, i, 1, lockstatus, 255);
-            }
-            else if (!_tcscmp(timecol, DBGetField(hResult, i, 0, NULL, 0)))
-            {
-               locktime = DBGetFieldLong(hResult, i, 1);
-            }
-         }
+         DBGetField(hResult, 0, 1, lockinfo, 255);
+         DBGetField(hResult, 1, 1, lockpid, 255);
+         DBGetField(hResult, 2, 1, lockstatus, 255);
+         locktime = DBGetFieldLong(hResult, 3, 1);
 
          if (_tcscmp(_T("#00"), lockinfo) || _tcscmp(_T("0"), lockpid) || _tcscmp(_T("UNLOCKED"), lockstatus))
          {
@@ -906,7 +886,7 @@ static THREAD_RESULT THREAD_CALL DatabaseUpdateTimestampThread(void *arg)
 
    while(!g_nxccShutdown)
    {
-      ThreadSleepMs(30000);
+      ThreadSleepMs(g_nxccDBUpdateTimeout * 1000);
       if (g_nxccShutdown)
          break;
 

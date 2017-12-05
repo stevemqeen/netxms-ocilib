@@ -34,6 +34,7 @@ bool g_nxccShutdown = false;
 bool g_nxccNeedSync = false;
 UINT16 g_nxccListenPort = 47000;
 UINT32 g_nxccCommandTimeout = 500;
+UINT32 g_nxccDBUpdateTimeout = 30;
 
 /**
  * Other cluster nodes
@@ -84,6 +85,7 @@ static NX_CFG_TEMPLATE s_clusterConfigTemplate[] =
    { _T("CommandTimeout"), CT_LONG, 0, 0, 0, 0, &g_nxccCommandTimeout, NULL },
    { _T("NodeId"), CT_LONG, 0, 0, 0, 0, &g_nxccNodeId, NULL },
    { _T("PeerNode"), CT_STRING_LIST, '\n', 0, 0, 0, &s_peerNodeList, NULL },
+   { _T("DBUpdateTimeout"), CT_LONG, 0, 0, 0, 0, &g_nxccDBUpdateTimeout, NULL },
    { _T(""), CT_END_OF_LIST, 0, 0, 0, 0, NULL, NULL }
 };
 
@@ -97,6 +99,9 @@ bool LIBNXCC_EXPORTABLE ClusterInit(Config *config, const TCHAR *section, Cluste
 
    if ((g_nxccNodeId < 1) || (g_nxccNodeId > CLUSTER_MAX_NODE_ID))
       return false;
+
+   if (g_nxccDBUpdateTimeout < 1)
+      g_nxccDBUpdateTimeout = 30;
 
    g_nxccThreadPool = ThreadPoolCreate(1, 16, _T("CLUSTER"));
 

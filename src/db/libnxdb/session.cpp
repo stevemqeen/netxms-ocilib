@@ -167,15 +167,13 @@ void LIBNXDB_EXPORTABLE DBEnableReconnect(DB_HANDLE hConn, bool enabled)
 /**
  * Check if database is alive
  */
-bool LIBNXDB_EXPORTABLE DBCheckConnection(DB_HANDLE hConn)
+bool LIBNXDB_EXPORTABLE DBCheckConnection(DB_HANDLE hConn, const TCHAR *szQuery)
 {
    bool result = true;
 
    MutexLock(hConn->m_mutexTransLock);
-   TCHAR pwszQuery[256];
-   _sntprintf(pwszQuery, 256, _T("SELECT var_value FROM metadata WHERE var_name='SchemaVersion'"));
 
-   DWORD dwResult = hConn->m_driver->m_fpDrvQuery(hConn->m_connection, pwszQuery, NULL);
+   DWORD dwResult = hConn->m_driver->m_fpDrvQuery(hConn->m_connection, szQuery, NULL);
    if ((dwResult == DBERR_CONNECTION_LOST))
       result = false;
 
