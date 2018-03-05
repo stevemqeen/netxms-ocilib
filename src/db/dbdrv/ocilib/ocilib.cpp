@@ -227,7 +227,9 @@ extern "C" DBDRV_CONNECTION EXPORT DrvConnect(const char *host, const char *logi
 		    pConn->nTransLevel = 0;
 		    pConn->lastErrorCode = 0;
 		    pConn->lastErrorText[0] = 0;
-		    pConn->prefetchLimit = 10;
+		    pConn->prefetchLimit = 0;
+
+		    OCI_SetStatementCacheSize(pConn->handleConnection, pConn->prefetchLimit);
 
  		    DrvQueryInternal(pConn, _T("ALTER SESSION SET NLS_LANGUAGE='AMERICAN' NLS_NUMERIC_CHARACTERS='.,'"), NULL);
  		    nxlog_debug(5, _T("ORACLE: connected to %i.%i.%i"), OCI_GetServerMajorVersion(OCIConn), OCI_GetServerMinorVersion(OCIConn), OCI_GetServerRevisionVersion(OCIConn));
@@ -756,6 +758,9 @@ static void BindBatch(ORACLE_STATEMENT *stmt, int pos, int sqlType, int cType, v
 				free(buffer);
 			break;
 	}
+
+	if (sqlBuffer != NULL)
+		free(sqlBuffer);
 }
 
 /**
@@ -1095,6 +1100,8 @@ static ORACLE_RESULT *ProcessQueryResults(ORACLE_CONN *pConn, OCI_Statement *han
 extern "C" DBDRV_RESULT EXPORT DrvSelect(ORACLE_CONN *pConn, WCHAR *pwszQuery, DWORD *pdwError, WCHAR *errorText)
 {
 	ORACLE_RESULT *pResult = NULL;
+
+	OCI_SetStatementCacheSize(pConn->handleConnection, pConn->prefetchLimit);
 	OCI_Statement *handleStmt = OCI_StatementCreate(pConn->handleConnection);
 
 #if UNICODE_UCS4
@@ -1102,7 +1109,7 @@ extern "C" DBDRV_RESULT EXPORT DrvSelect(ORACLE_CONN *pConn, WCHAR *pwszQuery, D
 #else
 	const UCS2CHAR *ucs2Query = pwszQuery;
 #endif
-
+	OCI_SetPrefetchMemory(handleStmt, pConn->prefetchLimit);
 	OCI_SetPrefetchSize(handleStmt, pConn->prefetchLimit);
 
 	MutexLock(pConn->mutexQueryLock);
@@ -1139,7 +1146,9 @@ extern "C" DBDRV_RESULT EXPORT DrvSelectPrepared(ORACLE_CONN *pConn, ORACLE_STAT
 {
 	ORACLE_RESULT *pResult = NULL;
 
+	OCI_SetPrefetchMemory(stmt->handleStmt, pConn->prefetchLimit);
 	OCI_SetPrefetchSize(stmt->handleStmt, pConn->prefetchLimit);
+	OCI_SetStatementCacheSize(pConn->handleConnection, pConn->prefetchLimit);
 
 	MutexLock(pConn->mutexQueryLock);
 	if(OCI_Execute(stmt->handleStmt) == true)
@@ -1328,10 +1337,12 @@ extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectUnbuffered(ORACLE_CONN *pConn
 
 	MutexLock(pConn->mutexQueryLock);
 
+	OCI_SetStatementCacheSize(pConn->handleConnection, pConn->prefetchLimit);
 	OCI_Statement *handleStmt = OCI_StatementCreate(pConn->handleConnection);
 
 	if(OCI_Prepare(handleStmt, (otext *)pwszQuery) == true)
 	{	
+		OCI_SetPrefetchMemory(handleStmt, pConn->prefetchLimit);
 		OCI_SetPrefetchSize(handleStmt, pConn->prefetchLimit);
 
 		if(OCI_Execute(handleStmt) == true)
@@ -1372,7 +1383,9 @@ extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectPreparedUnbuffered(ORACLE_CON
 
 	MutexLock(pConn->mutexQueryLock);
 
+	OCI_SetPrefetchMemory(stmt->handleStmt, pConn->prefetchLimit);
 	OCI_SetPrefetchSize(stmt->handleStmt, pConn->prefetchLimit);
+	OCI_SetStatementCacheSize(pConn->handleConnection, pConn->prefetchLimit);
 
 	if(OCI_Execute(stmt->handleStmt) == true)
 	{
