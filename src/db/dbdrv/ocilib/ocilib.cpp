@@ -759,8 +759,10 @@ static void BindBatch(ORACLE_STATEMENT *stmt, int pos, int sqlType, int cType, v
 			break;
 	}
 
+#ifdef UNICODE_UCS2
 	if (sqlBuffer != NULL)
 		free(sqlBuffer);
+#endif
 }
 
 /**
