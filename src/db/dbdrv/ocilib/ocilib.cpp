@@ -685,7 +685,7 @@ static void BindBatch(ORACLE_STATEMENT *stmt, int pos, int sqlType, int cType, v
 	if (bind->getCType() != cType)
     	return;
 
-    void *sqlBuffer;
+    void *sqlBuffer = NULL;
 	switch(bind->getCType())
 	{
 		case DB_CTYPE_STRING:
@@ -758,11 +758,6 @@ static void BindBatch(ORACLE_STATEMENT *stmt, int pos, int sqlType, int cType, v
 				free(buffer);
 			break;
 	}
-
-#ifdef UNICODE_UCS2
-	if (sqlBuffer != NULL)
-		free(sqlBuffer);
-#endif
 }
 
 /**
