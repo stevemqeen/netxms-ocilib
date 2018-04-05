@@ -24,9 +24,25 @@
 #include "libnetxms.h"
 
 /**
+ * Global variables
+ */
+int g_stringMaxBuffer = 1000;
+
+/**
  * Static members
  */
 const int String::npos = -1;
+
+/**
+ * Set max string buffer variable
+ */
+void LIBNETXMS_EXPORTABLE SetupStringMaxBuffer(int value)
+{  
+   if (g_stringMaxBuffer > value)
+      return;
+
+   g_stringMaxBuffer = value;
+}
 
 /**
  * Create empty string
@@ -165,7 +181,7 @@ void String::appendFormattedStringV(const TCHAR *format, va_list args)
    va_end(argsCopy);
 #else
 	// No way to determine required buffer size, guess
-	len = wcslen(format) + NumCharsW(format, L'%') * 1000 + 1;
+	len = wcslen(format) + NumCharsW(format, L'%') * g_stringMaxBuffer + 1;
    buffer = (WCHAR *)malloc(len * sizeof(WCHAR));
 
    nx_vswprintf(buffer, len, format, args);
@@ -199,7 +215,7 @@ void String::appendFormattedStringV(const TCHAR *format, va_list args)
 	va_end(argsCopy);
 #else
 	// No way to determine required buffer size, guess
-	len = strlen(format) + NumChars(format, '%') * 1000 + 1;
+	len = strlen(format) + NumChars(format, '%') * g_stringMaxBuffer + 1;
    buffer = (char *)malloc(len);
 
    vsnprintf(buffer, len, format, args);

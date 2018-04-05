@@ -2214,6 +2214,8 @@ time_t LIBNETXMS_EXPORTABLE ParseDateTimeW(const WCHAR *text, time_t defaultValu
 #define ParseDateTime ParseDateTimeA
 #endif
 
+void LIBNETXMS_EXPORTABLE SetupStringMaxBuffer(int value);
+
 #ifdef __cplusplus
 }
 #endif
