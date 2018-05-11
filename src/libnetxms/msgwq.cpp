@@ -387,6 +387,9 @@ THREAD_RESULT THREAD_CALL MsgWaitQueue::housekeeperThread(void *arg)
       m_housekeeperLock.lock();
       m_activeQueues->forEach(MsgWaitQueue::houseKeeperCallback, NULL);
       m_housekeeperLock.unlock();
+#ifdef _AIX
+      sleep(1);
+#endif
    }
    return THREAD_OK;
 }
