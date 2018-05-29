@@ -25,7 +25,7 @@
 /**
  * Connect to application agent
  */
-bool APPAGENT_EXPORTABLE AppAgentConnect(const TCHAR *name, HPIPE *hPipe)
+bool APPAGENT_EXPORTABLE AppAgentConnect(const TCHAR *name, HPIPE *hPipe, const TCHAR *path)
 {
 #ifdef _WIN32
 	TCHAR pipeName[MAX_PATH];
@@ -53,9 +53,9 @@ reconnect:
 	struct sockaddr_un remote;
 	remote.sun_family = AF_UNIX;
 #ifdef UNICODE
-   sprintf(remote.sun_path, "/tmp/.appagent.%S", name);
+   sprintf(remote.sun_path, "%S/.appagent.%S", path, name);
 #else
-	sprintf(remote.sun_path, "/tmp/.appagent.%s", name);
+	sprintf(remote.sun_path, "%s/.appagent.%s", path, name);
 #endif
 	if (connect(*hPipe, (struct sockaddr *)&remote, SUN_LEN(&remote)) == -1)
 	{

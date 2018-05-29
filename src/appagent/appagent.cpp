@@ -307,9 +307,9 @@ static THREAD_RESULT THREAD_CALL AppAgentConnector(void *arg)
 	struct sockaddr_un addrLocal;
 	addrLocal.sun_family = AF_UNIX;
 #ifdef UNICODE
-   sprintf(addrLocal.sun_path, "/tmp/.appagent.%S", s_config.name);
+   sprintf(addrLocal.sun_path, "%S/.appagent.%S", s_config.path, s_config.name);
 #else
-	sprintf(addrLocal.sun_path, "/tmp/.appagent.%s", s_config.name);
+	sprintf(addrLocal.sun_path, "%s/.appagent.%s", s_config.path, s_config.name);
 #endif
 	unlink(addrLocal.sun_path);
 	prevMask = umask(S_IWGRP | S_IWOTH);

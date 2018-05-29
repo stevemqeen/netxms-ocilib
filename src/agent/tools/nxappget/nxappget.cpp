@@ -30,6 +30,7 @@
 //
 
 static int optVerbose = 1;
+static char *optAgentPath = "/tmp";
 
 #if HAVE_DECL_GETOPT_LONG
 static struct option longOptions[] =
@@ -38,11 +39,12 @@ static struct option longOptions[] =
 	{ (char *)"help",      no_argument,       NULL,        'h' },
 	{ (char *)"verbose",   no_argument,       NULL,        'v' },
 	{ (char *)"quiet",     no_argument,       NULL,        'q' },
+	{ (char *)"path",      required_argument, NULL,        'p' },
 	{ NULL, 0, NULL, 0 }
 };
 #endif
 
-#define SHORT_OPTIONS "Vhvq"
+#define SHORT_OPTIONS "Vhvqp:"
 
 /**
  * Show online help
@@ -60,11 +62,13 @@ _T("  -V, --version              Display version information.\n")
 _T("  -h, --help                 Display this help message.\n")
 _T("  -v, --verbose              Enable verbose messages. Add twice for debug\n")
 _T("  -q, --quiet                Suppress all messages.\n\n")
+_T("  -p, --path                 Agent file path.\n\n")
 #else
 _T("  -V             Display version information.\n")
 _T("  -h             Display this help message.\n")
 _T("  -v             Enable verbose messages. Add twice for debug\n")
-_T("  -q             Suppress all messages.\n\n")
+_T("  -q             Suppress all messages.\n")
+_T("  -p             Agent file path.\n\n")
 #endif
 	, argv0);
 }
@@ -102,6 +106,9 @@ int main(int argc, char *argv[])
 		case 'q': // quiet
 			optVerbose = 0;
 			break;
+		case 'p': // path
+			optAgentPath = strdup(optarg);
+			break;	
 		case '?':
 			exit(3);
 			break;
@@ -125,12 +132,14 @@ int main(int argc, char *argv[])
 #ifdef UNICODE
 	WCHAR *appName = WideStringFromMBString(argv[optind]);
 	WCHAR *metricName = WideStringFromMBString(argv[optind + 1]);
+	WCHAR *agentPath = WideStringFromMBString(optAgentPath);
 #else
 	char *appName = argv[optind];
 	char *metricName = argv[optind + 1];
+	char *agentPath = optAgentPath;
 #endif
 	HPIPE hPipe;
-	if (AppAgentConnect(appName, &hPipe))
+	if (AppAgentConnect(appName, &hPipe, agentPath))
 	{
 		TCHAR value[256];
 		int rcc = AppAgentGetMetric(hPipe, metricName, value, 256);

@@ -151,6 +151,7 @@ typedef struct __appagent_table
 typedef struct __appagent_init
 {
 	const TCHAR *name;
+	const TCHAR *path;
 	const TCHAR *userId;
 	void (*messageDispatcher)(APPAGENT_MSG *);
 	void (*logger)(int, const TCHAR *, va_list);
@@ -181,7 +182,7 @@ bool APPAGENT_EXPORTABLE AppAgentGetParameterArgW(const TCHAR *param, int index,
 /**
  * Client-side API
  */
-bool APPAGENT_EXPORTABLE AppAgentConnect(const TCHAR *name, HPIPE *hPipe);
+bool APPAGENT_EXPORTABLE AppAgentConnect(const TCHAR *name, HPIPE *hPipe, const TCHAR *path = _T("/tmp"));
 void APPAGENT_EXPORTABLE AppAgentDisconnect(HPIPE hPipe);
 int APPAGENT_EXPORTABLE AppAgentGetMetric(HPIPE hPipe, const TCHAR *name, TCHAR *value, int bufferSize);
 int APPAGENT_EXPORTABLE AppAgentListMetrics(HPIPE hPipe, APPAGENT_METRIC **metrics, UINT32 *size);
