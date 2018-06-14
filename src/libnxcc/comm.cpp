@@ -669,7 +669,7 @@ NXCPMessage LIBNXCC_EXPORTABLE *ClusterSendDirectCommandEx(UINT32 nodeId, NXCPMe
    }
    else
    {
-      ClusterDebug(5, _T("ClusterDirectCommand: send failed for peer %d [%s]"), nodeId, (const TCHAR *)node->m_addr->toString());
+      ClusterDebug(5, _T("ClusterDirectCommand: send failed for peer %d"), nodeId);
    }
    MutexUnlock(node->m_mutex);
 
