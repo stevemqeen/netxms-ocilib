@@ -577,6 +577,33 @@ NXCPEncryptionContext::~NXCPEncryptionContext()
 }
 
 /**
+ *
+ */
+NXCPEncryptionContext *NXCPEncryptionContext::set(NXCPMessage *msg)
+{
+   NXCPEncryptionContext *ctx = new NXCPEncryptionContext;
+
+   int cipher = (int)msg->getFieldAsUInt16(VID_CIPHER);
+
+   if (ctx->initCipher(cipher))
+   {
+      if (ctx->m_keyLength == (int)msg->getFieldAsUInt16(VID_KEY_LENGTH))
+      {
+         ctx->m_sessionKey = (BYTE *)malloc(ctx->m_keyLength);
+         BYTE ucSessionKey[ctx->m_keyLength];
+
+         int nSize = msg->getFieldAsBinary(VID_SESSION_KEY, ucSessionKey, ctx->m_keyLength);
+         memcpy(ctx->m_sessionKey, ucSessionKey, nSize);
+
+         nSize = msg->getFieldAsBinary(VID_SESSION_IV, ucSessionKey, ctx->m_keyLength);
+         memcpy(ctx->m_iv, ucSessionKey, nSize);
+      }
+   }
+
+   return ctx;
+}
+
+/**
  * Create encryption context from CMD_SESSION_KEY NXCP message
  */
 NXCPEncryptionContext *NXCPEncryptionContext::create(NXCPMessage *msg, RSA *privateKey)

@@ -286,6 +286,8 @@ public:
 	BYTE *getSessionKey() { return m_sessionKey; }
 	int getKeyLength() { return m_keyLength; }
 	BYTE *getIV() { return m_iv; }
+
+	static NXCPEncryptionContext *set(NXCPMessage *msg);
 };
 
 /**
@@ -326,6 +328,7 @@ public:
    virtual ~AbstractMessageReceiver();
 
    void setEncryptionContext(NXCPEncryptionContext *ctx) { m_encryptionContext = ctx; }
+   void freeEncryptionContext() { safe_free(m_encryptionContext); }
 
    NXCPMessage *readMessage(UINT32 timeout, MessageReceiverResult *result);
    NXCP_MESSAGE *getRawMessageBuffer() { return (NXCP_MESSAGE *)m_buffer; }
