@@ -24,7 +24,7 @@
 
 DECLARE_DRIVER_HEADER("ORACLE")
 
-static DWORD DrvQueryInternal(ORACLE_CONN *pConn, const WCHAR *pwszQuery, WCHAR *errorText);
+static DWORD DrvQueryInternal(ORACLE_CONN *pConn, const TCHAR *pwszQuery, TCHAR *errorText);
 
 /**
  * Global environment handle
@@ -140,20 +140,12 @@ extern "C" void EXPORT DrvUnload()
 /**
  * Get error text from error handle
  */
-static void GetErrorFromHandle(OCIError *handle, sb4 *errorCode, WCHAR *errorText)
+static void GetErrorFromHandle(OCIError *handle, sb4 *errorCode, TCHAR *errorText)
 {
-#if UNICODE_UCS2
 	OCIErrorGet(handle, 1, NULL, errorCode, (text *)errorText, DBDRV_MAX_ERROR_TEXT, OCI_HTYPE_ERROR);
 	errorText[DBDRV_MAX_ERROR_TEXT - 1] = 0;
-#else
-	UCS2CHAR buffer[DBDRV_MAX_ERROR_TEXT];
 
-	OCIErrorGet(handle, 1, NULL, errorCode, (text *)buffer, DBDRV_MAX_ERROR_TEXT, OCI_HTYPE_ERROR);
-	buffer[DBDRV_MAX_ERROR_TEXT - 1] = 0;
-	ucs2_to_ucs4(buffer, ucs2_strlen(buffer) + 1, errorText, DBDRV_MAX_ERROR_TEXT);
-	errorText[DBDRV_MAX_ERROR_TEXT - 1] = 0;
-#endif
-	RemoveTrailingCRLFW(errorText);
+	RemoveTrailingCRLF(errorText);
 }
 
 /**
@@ -197,7 +189,7 @@ static void DestroyQueryResult(ORACLE_RESULT *pResult)
  * Connect to database
  */
 extern "C" DBDRV_CONNECTION EXPORT DrvConnect(const char *host, const char *login, const char *password, 
-                                              const char *database, const char *schema, WCHAR *errorText)
+                                              const char *database, const char *schema, TCHAR *errorText)
 {
 	ORACLE_CONN *pConn;
 	UCS2CHAR *pwszStr;
@@ -247,7 +239,7 @@ extern "C" DBDRV_CONNECTION EXPORT DrvConnect(const char *host, const char *logi
 				}
 
             // Setup session
-            DrvQueryInternal(pConn, L"ALTER SESSION SET NLS_LANGUAGE='AMERICAN' NLS_NUMERIC_CHARACTERS='.,'", NULL);
+            DrvQueryInternal(pConn, "ALTER SESSION SET NLS_LANGUAGE='AMERICAN' NLS_NUMERIC_CHARACTERS='.,'", NULL);
 
             UCS2CHAR version[1024];
             if (OCIServerVersion(pConn->handleService, pConn->handleError, (OraText *)version, sizeof(version), OCI_HTYPE_SVCCTX) == OCI_SUCCESS)
@@ -290,7 +282,7 @@ extern "C" DBDRV_CONNECTION EXPORT DrvConnect(const char *host, const char *logi
 	}
 	else
 	{
-		wcscpy(errorText, L"Memory allocation error");
+		strcpy(errorText, "Memory allocation error");
 	}
 
    return (DBDRV_CONNECTION)pConn;
@@ -400,7 +392,7 @@ static UCS2CHAR *ConvertQuery(WCHAR *query)
 /**
  * Prepare statement
  */
-extern "C" ORACLE_STATEMENT EXPORT *DrvPrepare(ORACLE_CONN *pConn, WCHAR *pwszQuery, DWORD *pdwError, WCHAR *errorText)
+extern "C" ORACLE_STATEMENT EXPORT *DrvPrepare(ORACLE_CONN *pConn, WCHAR *pwszQuery, DWORD *pdwError, TCHAR *errorText)
 {
 	ORACLE_STATEMENT *stmt = NULL;
 	OCIStmt *handleStmt;
@@ -430,7 +422,7 @@ extern "C" ORACLE_STATEMENT EXPORT *DrvPrepare(ORACLE_CONN *pConn, WCHAR *pwszQu
 
 	if (errorText != NULL)
 	{
-		wcsncpy(errorText, pConn->lastErrorText, DBDRV_MAX_ERROR_TEXT);
+		strncpy(errorText, pConn->lastErrorText, DBDRV_MAX_ERROR_TEXT);
 		errorText[DBDRV_MAX_ERROR_TEXT - 1] = 0;
 	}
 	MutexUnlock(pConn->mutexQueryLock);
@@ -791,7 +783,7 @@ extern "C" void EXPORT DrvBind(ORACLE_STATEMENT *stmt, int pos, int sqlType, int
 /**
  * Execute prepared non-select statement
  */
-extern "C" DWORD EXPORT DrvExecute(ORACLE_CONN *pConn, ORACLE_STATEMENT *stmt, WCHAR *errorText)
+extern "C" DWORD EXPORT DrvExecute(ORACLE_CONN *pConn, ORACLE_STATEMENT *stmt, TCHAR *errorText)
 {
 	DWORD dwResult;
 
@@ -831,7 +823,7 @@ extern "C" DWORD EXPORT DrvExecute(ORACLE_CONN *pConn, ORACLE_STATEMENT *stmt, W
 
 	if (errorText != NULL)
 	{
-		wcsncpy(errorText, pConn->lastErrorText, DBDRV_MAX_ERROR_TEXT);
+		strncpy(errorText, pConn->lastErrorText, DBDRV_MAX_ERROR_TEXT);
 		errorText[DBDRV_MAX_ERROR_TEXT - 1] = 0;
 	}
 	MutexUnlock(pConn->mutexQueryLock);
@@ -866,20 +858,14 @@ extern "C" void EXPORT DrvFreeStatement(ORACLE_STATEMENT *stmt)
 /**
  * Perform non-SELECT query
  */
-static DWORD DrvQueryInternal(ORACLE_CONN *pConn, const WCHAR *pwszQuery, WCHAR *errorText)
+static DWORD DrvQueryInternal(ORACLE_CONN *pConn, const TCHAR *pwszQuery, TCHAR *errorText)
 {
 	OCIStmt *handleStmt;
 	DWORD dwResult;
 
-#if UNICODE_UCS4
-	UCS2CHAR *ucs2Query = UCS2StringFromUCS4String(pwszQuery);
-#else
-	const UCS2CHAR *ucs2Query = pwszQuery;
-#endif
-
 	MutexLock(pConn->mutexQueryLock);
-	if (OCIStmtPrepare2(pConn->handleService, &handleStmt, pConn->handleError, (text *)ucs2Query,
-	                    (ub4)ucs2_strlen(ucs2Query) * sizeof(UCS2CHAR), NULL, 0, OCI_NTV_SYNTAX, OCI_DEFAULT) == OCI_SUCCESS)
+	if (OCIStmtPrepare2(pConn->handleService, &handleStmt, pConn->handleError, (text *)pwszQuery,
+	                    _tcslen(pwszQuery) * sizeof(TCHAR), NULL, 0, OCI_NTV_SYNTAX, OCI_DEFAULT) == OCI_SUCCESS)
 	{
 		if (OCIStmtExecute(pConn->handleService, handleStmt, pConn->handleError, 1, 0, NULL, NULL,
 		                   (pConn->nTransLevel == 0) ? OCI_COMMIT_ON_SUCCESS : OCI_DEFAULT) == OCI_SUCCESS)
@@ -900,21 +886,18 @@ static DWORD DrvQueryInternal(ORACLE_CONN *pConn, const WCHAR *pwszQuery, WCHAR 
 	}
 	if (errorText != NULL)
 	{
-		wcsncpy(errorText, pConn->lastErrorText, DBDRV_MAX_ERROR_TEXT);
+		strncpy(errorText, pConn->lastErrorText, DBDRV_MAX_ERROR_TEXT);
 		errorText[DBDRV_MAX_ERROR_TEXT - 1] = 0;
 	}
 	MutexUnlock(pConn->mutexQueryLock);
 
-#if UNICODE_UCS4
-	free(ucs2Query);
-#endif
 	return dwResult;
 }
 
 /**
  * Perform non-SELECT query - entry point
  */
-extern "C" DWORD EXPORT DrvQuery(ORACLE_CONN *conn, const WCHAR *query, WCHAR *errorText)
+extern "C" DWORD EXPORT DrvQuery(ORACLE_CONN *conn, const TCHAR *query, TCHAR *errorText)
 {
    return DrvQueryInternal(conn, query, errorText);
 }
@@ -1044,40 +1027,32 @@ static ORACLE_RESULT *ProcessQueryResults(ORACLE_CONN *pConn, OCIStmt *handleStm
 
 				// New row
 				pResult->nRows++;
-				pResult->pData = (WCHAR **)realloc(pResult->pData, sizeof(WCHAR *) * pResult->nCols * pResult->nRows);
+				pResult->pData = (TCHAR **)realloc(pResult->pData, sizeof(TCHAR *) * pResult->nCols * pResult->nRows);
 				for(int i = 0; i < pResult->nCols; i++)
 				{
 					if (pBuffers[i].isNull)
 					{
-						pResult->pData[nPos] = (WCHAR *)nx_memdup("\0\0\0", sizeof(WCHAR));
+						pResult->pData[nPos] = (TCHAR *)nx_memdup("\0\0\0", sizeof(TCHAR));
 					}
                else if (pBuffers[i].lobLocator != NULL)
                {
                   ub4 length = 0;
                   ub4 amount = length;
                   OCILobGetLength(pConn->handleService, pConn->handleError, pBuffers[i].lobLocator, &length);
-						pResult->pData[nPos] = (WCHAR *)malloc((length + 1) * sizeof(WCHAR));
-#if UNICODE_UCS4
-                  UCS2CHAR *ucs2buffer = (UCS2CHAR *)malloc(sizeof(UCS2CHAR) * length);
+						pResult->pData[nPos] = (TCHAR *)malloc((length + 1) * sizeof(TCHAR));
+
                   OCILobRead(pConn->handleService, pConn->handleError, pBuffers[i].lobLocator, &amount, 1, 
-                             ucs2buffer, length * sizeof(UCS2CHAR), NULL, NULL, OCI_UCS2ID, SQLCS_IMPLICIT);
-						ucs2_to_ucs4(ucs2buffer, length, pResult->pData[nPos], length + 1);
-                  free(ucs2buffer);
-#else
-                  OCILobRead(pConn->handleService, pConn->handleError, pBuffers[i].lobLocator, &amount, 1, 
-                             pResult->pData[nPos], (length + 1) * sizeof(WCHAR), NULL, NULL, OCI_UCS2ID, SQLCS_IMPLICIT);
-#endif
+                             pResult->pData[nPos], (length + 1) * sizeof(TCHAR), NULL, NULL, OCI_UCS2ID, SQLCS_IMPLICIT);
+
 						pResult->pData[nPos][length] = 0;
                }
 					else
 					{
 						int length = pBuffers[i].nLength / sizeof(UCS2CHAR);
-						pResult->pData[nPos] = (WCHAR *)malloc((length + 1) * sizeof(WCHAR));
-#if UNICODE_UCS4
-						ucs2_to_ucs4(pBuffers[i].pData, length, pResult->pData[nPos], length + 1);
-#else
+						pResult->pData[nPos] = (TCHAR *)malloc((length + 1) * sizeof(TCHAR));
+
 						memcpy(pResult->pData[nPos], pBuffers[i].pData, pBuffers[i].nLength);
-#endif
+
 						pResult->pData[nPos][length] = 0;
 					}
 					nPos++;
@@ -1110,20 +1085,14 @@ static ORACLE_RESULT *ProcessQueryResults(ORACLE_CONN *pConn, OCIStmt *handleStm
 /**
  * Perform SELECT query
  */
-extern "C" DBDRV_RESULT EXPORT DrvSelect(ORACLE_CONN *pConn, WCHAR *pwszQuery, DWORD *pdwError, WCHAR *errorText)
+extern "C" DBDRV_RESULT EXPORT DrvSelect(ORACLE_CONN *pConn, TCHAR *pwszQuery, DWORD *pdwError, TCHAR *errorText)
 {
 	ORACLE_RESULT *pResult = NULL;
 	OCIStmt *handleStmt;
 
-#if UNICODE_UCS4
-	UCS2CHAR *ucs2Query = UCS2StringFromUCS4String(pwszQuery);
-#else
-	UCS2CHAR *ucs2Query = pwszQuery;
-#endif
-
 	MutexLock(pConn->mutexQueryLock);
-	if (OCIStmtPrepare2(pConn->handleService, &handleStmt, pConn->handleError, (text *)ucs2Query,
-	                    (ub4)ucs2_strlen(ucs2Query) * sizeof(UCS2CHAR), NULL, 0, OCI_NTV_SYNTAX, OCI_DEFAULT) == OCI_SUCCESS)
+	if (OCIStmtPrepare2(pConn->handleService, &handleStmt, pConn->handleError, (text *)pwszQuery,
+	                    _tcslen(pwszQuery) * sizeof(TCHAR), NULL, 0, OCI_NTV_SYNTAX, OCI_DEFAULT) == OCI_SUCCESS)
 	{
       OCIAttrSet(handleStmt, OCI_HTYPE_STMT, &pConn->prefetchLimit, 0, OCI_ATTR_PREFETCH_ROWS, pConn->handleError);
 		if (OCIStmtExecute(pConn->handleService, handleStmt, pConn->handleError,
@@ -1145,21 +1114,18 @@ extern "C" DBDRV_RESULT EXPORT DrvSelect(ORACLE_CONN *pConn, WCHAR *pwszQuery, D
 	}
 	if (errorText != NULL)
 	{
-		wcsncpy(errorText, pConn->lastErrorText, DBDRV_MAX_ERROR_TEXT);
+		strncpy(errorText, pConn->lastErrorText, DBDRV_MAX_ERROR_TEXT);
 		errorText[DBDRV_MAX_ERROR_TEXT - 1] = 0;
 	}
 	MutexUnlock(pConn->mutexQueryLock);
 
-#if UNICODE_UCS4
-	free(ucs2Query);
-#endif
 	return pResult;
 }
 
 /**
  * Perform SELECT query using prepared statement
  */
-extern "C" DBDRV_RESULT EXPORT DrvSelectPrepared(ORACLE_CONN *pConn, ORACLE_STATEMENT *stmt, DWORD *pdwError, WCHAR *errorText)
+extern "C" DBDRV_RESULT EXPORT DrvSelectPrepared(ORACLE_CONN *pConn, ORACLE_STATEMENT *stmt, DWORD *pdwError, TCHAR *errorText)
 {
 	ORACLE_RESULT *pResult = NULL;
 
@@ -1178,7 +1144,7 @@ extern "C" DBDRV_RESULT EXPORT DrvSelectPrepared(ORACLE_CONN *pConn, ORACLE_STAT
 
 	if (errorText != NULL)
 	{
-		wcsncpy(errorText, pConn->lastErrorText, DBDRV_MAX_ERROR_TEXT);
+		strncpy(errorText, pConn->lastErrorText, DBDRV_MAX_ERROR_TEXT);
 		errorText[DBDRV_MAX_ERROR_TEXT - 1] = 0;
 	}
 	MutexUnlock(pConn->mutexQueryLock);
@@ -1196,7 +1162,7 @@ extern "C" LONG EXPORT DrvGetFieldLength(ORACLE_RESULT *pResult, int nRow, int n
 
 	if ((nRow >= 0) && (nRow < pResult->nRows) &&
 		 (nColumn >= 0) && (nColumn < pResult->nCols))
-		return (LONG)wcslen(pResult->pData[pResult->nCols * nRow + nColumn]);
+		return (LONG)_tcslen(pResult->pData[pResult->nCols * nRow + nColumn]);
 	
 	return -1;
 }
@@ -1204,10 +1170,10 @@ extern "C" LONG EXPORT DrvGetFieldLength(ORACLE_RESULT *pResult, int nRow, int n
 /**
  * Get field value from result
  */
-extern "C" WCHAR EXPORT *DrvGetField(ORACLE_RESULT *pResult, int nRow, int nColumn,
-                                     WCHAR *pBuffer, int nBufLen)
+extern "C" TCHAR EXPORT *DrvGetField(ORACLE_RESULT *pResult, int nRow, int nColumn,
+                                     TCHAR *pBuffer, int nBufLen)
 {
-   WCHAR *pValue = NULL;
+   TCHAR *pValue = NULL;
 
    if (pResult != NULL)
    {
@@ -1215,9 +1181,9 @@ extern "C" WCHAR EXPORT *DrvGetField(ORACLE_RESULT *pResult, int nRow, int nColu
           (nColumn < pResult->nCols) && (nColumn >= 0))
       {
 #ifdef _WIN32
-         wcsncpy_s(pBuffer, nBufLen, pResult->pData[nRow * pResult->nCols + nColumn], _TRUNCATE);
+         strncpy_s(pBuffer, nBufLen, pResult->pData[nRow * pResult->nCols + nColumn], _TRUNCATE);
 #else
-         wcsncpy(pBuffer, pResult->pData[nRow * pResult->nCols + nColumn], nBufLen);
+         strncpy(pBuffer, pResult->pData[nRow * pResult->nCols + nColumn], nBufLen);
          pBuffer[nBufLen - 1] = 0;
 #endif
          pValue = pBuffer;
@@ -1376,21 +1342,15 @@ static ORACLE_UNBUFFERED_RESULT *ProcessUnbufferedQueryResults(ORACLE_CONN *pCon
 /**
  * Perform unbuffered SELECT query
  */
-extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectUnbuffered(ORACLE_CONN *pConn, WCHAR *pwszQuery, DWORD *pdwError, WCHAR *errorText)
+extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectUnbuffered(ORACLE_CONN *pConn, TCHAR *pwszQuery, DWORD *pdwError, TCHAR *errorText)
 {
    ORACLE_UNBUFFERED_RESULT *result = NULL;
-
-#if UNICODE_UCS4
-	UCS2CHAR *ucs2Query = UCS2StringFromUCS4String(pwszQuery);
-#else
-	UCS2CHAR *ucs2Query = pwszQuery;
-#endif
 
 	MutexLock(pConn->mutexQueryLock);
 
 	OCIStmt *handleStmt;
-	if (OCIStmtPrepare2(pConn->handleService, &handleStmt, pConn->handleError, (text *)ucs2Query,
-	                    (ub4)ucs2_strlen(ucs2Query) * sizeof(UCS2CHAR), NULL, 0, OCI_NTV_SYNTAX, OCI_DEFAULT) == OCI_SUCCESS)
+	if (OCIStmtPrepare2(pConn->handleService, &handleStmt, pConn->handleError, (text *)pwszQuery,
+	                    _tcslen(pwszQuery) * sizeof(UCS2CHAR), NULL, 0, OCI_NTV_SYNTAX, OCI_DEFAULT) == OCI_SUCCESS)
 	{
       OCIAttrSet(handleStmt, OCI_HTYPE_STMT, &pConn->prefetchLimit, 0, OCI_ATTR_PREFETCH_ROWS, pConn->handleError);
 		if (OCIStmtExecute(pConn->handleService, handleStmt, pConn->handleError,
@@ -1410,10 +1370,6 @@ extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectUnbuffered(ORACLE_CONN *pConn
 		*pdwError = IsConnectionError(pConn);
 	}
 
-#if UNICODE_UCS4
-	free(ucs2Query);
-#endif
-
 	if ((*pdwError == DBERR_SUCCESS) && (result != NULL))
 		return result;
 
@@ -1421,7 +1377,7 @@ extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectUnbuffered(ORACLE_CONN *pConn
 	OCIStmtRelease(handleStmt, pConn->handleError, NULL, 0, OCI_DEFAULT);
 	if (errorText != NULL)
 	{
-		wcsncpy(errorText, pConn->lastErrorText, DBDRV_MAX_ERROR_TEXT);
+		strncpy(errorText, pConn->lastErrorText, DBDRV_MAX_ERROR_TEXT);
 		errorText[DBDRV_MAX_ERROR_TEXT - 1] = 0;
 	}
 	MutexUnlock(pConn->mutexQueryLock);
@@ -1431,7 +1387,7 @@ extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectUnbuffered(ORACLE_CONN *pConn
 /**
  * Perform SELECT query using prepared statement
  */
-extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectPreparedUnbuffered(ORACLE_CONN *pConn, ORACLE_STATEMENT *stmt, DWORD *pdwError, WCHAR *errorText)
+extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectPreparedUnbuffered(ORACLE_CONN *pConn, ORACLE_STATEMENT *stmt, DWORD *pdwError, TCHAR *errorText)
 {
    ORACLE_UNBUFFERED_RESULT *result = NULL;
 
@@ -1455,7 +1411,7 @@ extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectPreparedUnbuffered(ORACLE_CON
    // On failure, unlock query mutex and do cleanup
    if (errorText != NULL)
    {
-      wcsncpy(errorText, pConn->lastErrorText, DBDRV_MAX_ERROR_TEXT);
+      strncpy(errorText, pConn->lastErrorText, DBDRV_MAX_ERROR_TEXT);
       errorText[DBDRV_MAX_ERROR_TEXT - 1] = 0;
    }
    MutexUnlock(pConn->mutexQueryLock);
@@ -1669,19 +1625,19 @@ extern "C" DWORD EXPORT DrvRollback(ORACLE_CONN *pConn)
 /**
  * Check if table exist
  */
-extern "C" int EXPORT DrvIsTableExist(ORACLE_CONN *pConn, const WCHAR *name)
+extern "C" int EXPORT DrvIsTableExist(ORACLE_CONN *pConn, const TCHAR *name)
 {
-   WCHAR query[256];
-   swprintf(query, 256, L"SELECT count(*) FROM user_tables WHERE table_name=upper('%ls')", name);
+   TCHAR query[256];
+   snprintf(query, 256, "SELECT count(*) FROM user_tables WHERE table_name=upper('%s')", name);
    DWORD error;
-   WCHAR errorText[DBDRV_MAX_ERROR_TEXT];
+   TCHAR errorText[DBDRV_MAX_ERROR_TEXT];
    int rc = DBIsTableExist_Failure;
    ORACLE_RESULT *hResult = (ORACLE_RESULT *)DrvSelect(pConn, query, &error, errorText);
    if (hResult != NULL)
    {
-      WCHAR buffer[64] = L"";
+      TCHAR buffer[64] = "";
       DrvGetField(hResult, 0, 0, buffer, 64);
-      rc = (wcstol(buffer, NULL, 10) > 0) ? DBIsTableExist_Found : DBIsTableExist_NotFound;
+      rc = (_tcstol(buffer, NULL, 10) > 0) ? DBIsTableExist_Found : DBIsTableExist_NotFound;
       DrvFreeResult(hResult);
    }
    return rc;

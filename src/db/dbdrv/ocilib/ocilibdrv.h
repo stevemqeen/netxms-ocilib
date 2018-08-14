@@ -36,7 +36,7 @@
 #define EXPORT
 #endif   /* _WIN32 */
 
-#define OCI_CHARSET_UNICODE
+#define OCI_CHARSET_ANSI
 
 #include <nms_common.h>
 #include <nms_util.h>
@@ -49,7 +49,7 @@
  */
 struct ORACLE_FETCH_BUFFER
 {
-	UCS2CHAR *pData;
+	TCHAR *pData;
    OCILobLocator *lobLocator;
 	ub2 nLength;
 	ub2 nCode;
@@ -69,7 +69,7 @@ struct ORACLE_CONN
 	MUTEX mutexQueryLock;
 	int nTransLevel;
 	sb4 lastErrorCode;
-	WCHAR lastErrorText[DBDRV_MAX_ERROR_TEXT];
+	TCHAR lastErrorText[DBDRV_MAX_ERROR_TEXT];
    ub4 prefetchLimit;
 };
 
@@ -85,7 +85,7 @@ private:
    int m_allocated;
    int m_elementSize;
    bool m_string;
-   WCHAR **m_strings;
+   TCHAR **m_strings;
    void *m_data;
 
 public:
@@ -123,7 +123,7 @@ struct ORACLE_RESULT
 {
 	int nRows;
 	int nCols;
-	WCHAR **pData;
+	TCHAR **pData;
 	char **columnNames;
 };
 

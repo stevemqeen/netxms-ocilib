@@ -538,7 +538,7 @@ static bool PeerNodeIsRunning(const InetAddress& addr)
 /**
  * Database event handler
  */
-static void DBEventHandler(DWORD dwEvent, const WCHAR *pszArg1, const WCHAR *pszArg2, bool connLost, void *userArg)
+static void DBEventHandler(DWORD dwEvent, const TCHAR *pszArg1, const TCHAR *pszArg2, bool connLost, void *userArg)
 {
 	if (!(g_flags & AF_SERVER_INITIALIZED))
 		return;     // Don't try to do anything if server is not ready yet

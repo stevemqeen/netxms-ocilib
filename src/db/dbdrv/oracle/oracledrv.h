@@ -65,7 +65,7 @@ struct ORACLE_CONN
 	MUTEX mutexQueryLock;
 	int nTransLevel;
 	sb4 lastErrorCode;
-	WCHAR lastErrorText[DBDRV_MAX_ERROR_TEXT];
+	TCHAR lastErrorText[DBDRV_MAX_ERROR_TEXT];
    ub4 prefetchLimit;
 };
 
@@ -118,7 +118,7 @@ struct ORACLE_RESULT
 {
 	int nRows;
 	int nCols;
-	WCHAR **pData;
+	TCHAR **pData;
 	char **columnNames;
 };
 

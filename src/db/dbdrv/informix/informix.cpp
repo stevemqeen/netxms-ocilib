@@ -189,7 +189,7 @@ extern "C" void EXPORT DrvUnload()
  * Connect to database
  * database should be set to Informix source name. Host and schema are ignored
  */
-extern "C" DBDRV_CONNECTION EXPORT DrvConnect(char *host, char *login, char *password, char *database, const char *schema, WCHAR *errorText)
+extern "C" DBDRV_CONNECTION EXPORT DrvConnect(char *host, char *login, char *password, char *database, const char *schema, TCHAR *errorText)
 {
 	long iResult;
 	INFORMIX_CONN *pConn;

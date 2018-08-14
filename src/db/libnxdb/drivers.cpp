@@ -88,7 +88,7 @@ bool LIBNXDB_EXPORTABLE DBInit(DWORD logMsgCode, DWORD sqlErrorMsgCode)
  * @return driver handle on success, NULL on failure
  */
 DB_DRIVER LIBNXDB_EXPORTABLE DBLoadDriver(const TCHAR *module, const TCHAR *initParameters,
-														bool dumpSQL, void (* fpEventHandler)(DWORD, const WCHAR *, const WCHAR *, bool, void *),
+														bool dumpSQL, void (* fpEventHandler)(DWORD, const TCHAR *, const TCHAR *, bool, void *),
 														void *userArg)
 {
    static DWORD dwVersionZero = 0;
@@ -190,24 +190,24 @@ DB_DRIVER LIBNXDB_EXPORTABLE DBLoadDriver(const TCHAR *module, const TCHAR *init
 
    // Import symbols
    fpDrvInit = (bool (*)(const char *))DLGetSymbolAddrEx(driver->m_handle, "DrvInit");
-   driver->m_fpDrvConnect = (DBDRV_CONNECTION (*)(const char *, const char *, const char *, const char *, const char *, WCHAR *))DLGetSymbolAddrEx(driver->m_handle, "DrvConnect");
+   driver->m_fpDrvConnect = (DBDRV_CONNECTION (*)(const char *, const char *, const char *, const char *, const char *, TCHAR *))DLGetSymbolAddrEx(driver->m_handle, "DrvConnect");
    driver->m_fpDrvDisconnect = (void (*)(DBDRV_CONNECTION))DLGetSymbolAddrEx(driver->m_handle, "DrvDisconnect");
    driver->m_fpDrvSetPrefetchLimit = (bool (*)(DBDRV_CONNECTION, int))DLGetSymbolAddrEx(driver->m_handle, "DrvSetPrefetchLimit", false);
-	driver->m_fpDrvPrepare = (DBDRV_STATEMENT (*)(DBDRV_CONNECTION, const WCHAR *, DWORD *, WCHAR *))DLGetSymbolAddrEx(driver->m_handle, "DrvPrepare");
+	driver->m_fpDrvPrepare = (DBDRV_STATEMENT (*)(DBDRV_CONNECTION, const TCHAR *, DWORD *, TCHAR *))DLGetSymbolAddrEx(driver->m_handle, "DrvPrepare");
 	driver->m_fpDrvFreeStatement = (void (*)(DBDRV_STATEMENT))DLGetSymbolAddrEx(driver->m_handle, "DrvFreeStatement");
 	driver->m_fpDrvOpenBatch = (bool (*)(DBDRV_STATEMENT))DLGetSymbolAddrEx(driver->m_handle, "DrvOpenBatch", false);
 	driver->m_fpDrvNextBatchRow = (void (*)(DBDRV_STATEMENT))DLGetSymbolAddrEx(driver->m_handle, "DrvNextBatchRow", false);
 	driver->m_fpDrvBind = (void (*)(DBDRV_STATEMENT, int, int, int, void *, int))DLGetSymbolAddrEx(driver->m_handle, "DrvBind");
-	driver->m_fpDrvExecute = (DWORD (*)(DBDRV_CONNECTION, DBDRV_STATEMENT, WCHAR *))DLGetSymbolAddrEx(driver->m_handle, "DrvExecute");
-   driver->m_fpDrvQuery = (DWORD (*)(DBDRV_CONNECTION, const WCHAR *, WCHAR *))DLGetSymbolAddrEx(driver->m_handle, "DrvQuery");
-   driver->m_fpDrvSelect = (DBDRV_RESULT (*)(DBDRV_CONNECTION, const WCHAR *, DWORD *, WCHAR *))DLGetSymbolAddrEx(driver->m_handle, "DrvSelect");
-   driver->m_fpDrvSelectUnbuffered = (DBDRV_UNBUFFERED_RESULT (*)(DBDRV_CONNECTION, const WCHAR *, DWORD *, WCHAR *))DLGetSymbolAddrEx(driver->m_handle, "DrvSelectUnbuffered");
-	driver->m_fpDrvSelectPrepared = (DBDRV_RESULT (*)(DBDRV_CONNECTION, DBDRV_STATEMENT, DWORD *, WCHAR *))DLGetSymbolAddrEx(driver->m_handle, "DrvSelectPrepared");
-   driver->m_fpDrvSelectPreparedUnbuffered = (DBDRV_UNBUFFERED_RESULT (*)(DBDRV_CONNECTION, DBDRV_STATEMENT, DWORD *, WCHAR *))DLGetSymbolAddrEx(driver->m_handle, "DrvSelectPreparedUnbuffered");
+	driver->m_fpDrvExecute = (DWORD (*)(DBDRV_CONNECTION, DBDRV_STATEMENT, TCHAR *))DLGetSymbolAddrEx(driver->m_handle, "DrvExecute");
+   driver->m_fpDrvQuery = (DWORD (*)(DBDRV_CONNECTION, const TCHAR *, TCHAR *))DLGetSymbolAddrEx(driver->m_handle, "DrvQuery");
+   driver->m_fpDrvSelect = (DBDRV_RESULT (*)(DBDRV_CONNECTION, const TCHAR *, DWORD *, TCHAR *))DLGetSymbolAddrEx(driver->m_handle, "DrvSelect");
+   driver->m_fpDrvSelectUnbuffered = (DBDRV_UNBUFFERED_RESULT (*)(DBDRV_CONNECTION, const TCHAR *, DWORD *, TCHAR *))DLGetSymbolAddrEx(driver->m_handle, "DrvSelectUnbuffered");
+	driver->m_fpDrvSelectPrepared = (DBDRV_RESULT (*)(DBDRV_CONNECTION, DBDRV_STATEMENT, DWORD *, TCHAR *))DLGetSymbolAddrEx(driver->m_handle, "DrvSelectPrepared");
+   driver->m_fpDrvSelectPreparedUnbuffered = (DBDRV_UNBUFFERED_RESULT (*)(DBDRV_CONNECTION, DBDRV_STATEMENT, DWORD *, TCHAR *))DLGetSymbolAddrEx(driver->m_handle, "DrvSelectPreparedUnbuffered");
    driver->m_fpDrvFetch = (bool (*)(DBDRV_UNBUFFERED_RESULT))DLGetSymbolAddrEx(driver->m_handle, "DrvFetch");
    driver->m_fpDrvGetFieldLength = (LONG (*)(DBDRV_RESULT, int, int))DLGetSymbolAddrEx(driver->m_handle, "DrvGetFieldLength");
    driver->m_fpDrvGetFieldLengthUnbuffered = (LONG (*)(DBDRV_UNBUFFERED_RESULT, int))DLGetSymbolAddrEx(driver->m_handle, "DrvGetFieldLengthUnbuffered");
-   driver->m_fpDrvGetField = (WCHAR* (*)(DBDRV_RESULT, int, int, WCHAR *, int))DLGetSymbolAddrEx(driver->m_handle, "DrvGetField");
+   driver->m_fpDrvGetField = (TCHAR* (*)(DBDRV_RESULT, int, int, TCHAR *, int))DLGetSymbolAddrEx(driver->m_handle, "DrvGetField");
    driver->m_fpDrvGetFieldUTF8 = (char* (*)(DBDRV_RESULT, int, int, char *, int))DLGetSymbolAddrEx(driver->m_handle, "DrvGetFieldUTF8", false); // optional entry point
    driver->m_fpDrvGetFieldUnbuffered = (WCHAR* (*)(DBDRV_UNBUFFERED_RESULT, int, WCHAR *, int))DLGetSymbolAddrEx(driver->m_handle, "DrvGetFieldUnbuffered");
    driver->m_fpDrvGetFieldUnbufferedUTF8 = (char* (*)(DBDRV_UNBUFFERED_RESULT, int, char *, int))DLGetSymbolAddrEx(driver->m_handle, "DrvGetFieldUnbufferedUTF8", false); // optional entry point
@@ -224,7 +224,7 @@ DB_DRIVER LIBNXDB_EXPORTABLE DBLoadDriver(const TCHAR *module, const TCHAR *init
    driver->m_fpDrvRollback = (DWORD (*)(DBDRV_CONNECTION))DLGetSymbolAddrEx(driver->m_handle, "DrvRollback");
    driver->m_fpDrvUnload = (void (*)(void))DLGetSymbolAddrEx(driver->m_handle, "DrvUnload");
    driver->m_fpDrvPrepareStringA = (char* (*)(const char *))DLGetSymbolAddrEx(driver->m_handle, "DrvPrepareStringA");
-   driver->m_fpDrvPrepareStringW = (WCHAR* (*)(const WCHAR *))DLGetSymbolAddrEx(driver->m_handle, "DrvPrepareStringW");
+   driver->m_fpDrvPrepareStringW = (TCHAR* (*)(const TCHAR *))DLGetSymbolAddrEx(driver->m_handle, "DrvPrepareStringW");
    driver->m_fpDrvIsTableExist = (int (*)(DBDRV_CONNECTION, const WCHAR *))DLGetSymbolAddrEx(driver->m_handle, "DrvIsTableExist");
    if ((fpDrvInit == NULL) || (driver->m_fpDrvConnect == NULL) || (driver->m_fpDrvDisconnect == NULL) ||
 	    (driver->m_fpDrvPrepare == NULL) || (driver->m_fpDrvBind == NULL) || (driver->m_fpDrvFreeStatement == NULL) ||
