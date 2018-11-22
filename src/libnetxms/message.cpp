@@ -369,7 +369,7 @@ void *NXCPMessage::set(UINT32 fieldId, BYTE type, const void *value, bool isSign
          ucs4_to_ucs2((WCHAR *)value, length, __buffer, length + 1);
 #endif         
 #else		/* not UNICODE */
-			__buffer = UCS2StringFromUF8tring((const char *)value);
+			__buffer = UCS2StringFromUTF8String((const char *)value);
 			length = (UINT32)ucs2_strlen(__buffer);
 			if ((size > 0) && (length > size))
 				length = size;
