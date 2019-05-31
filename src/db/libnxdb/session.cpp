@@ -1243,8 +1243,8 @@ void LIBNXDB_EXPORTABLE DBBind(DB_STATEMENT hStmt, int pos, int sqlType, int cTy
 	void *wBuffer;
 	int realAllocType = allocType;
 	if (cType == DB_CTYPE_STRING)
-	{
-		wBuffer = (void *)WideStringFromMBString((char *)buffer);
+	{ 
+		wBuffer = (void *)_tcsdup((char*)buffer);
 		if (allocType == DB_BIND_DYNAMIC)
 			free(buffer);
 		realAllocType = DB_BIND_DYNAMIC;

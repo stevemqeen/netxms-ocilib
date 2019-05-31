@@ -664,7 +664,7 @@ static void BindBatch(ORACLE_STATEMENT *stmt, int pos, int sqlType, int cType, v
 			{			
 #if UNICODE_UCS4
 			if(_tcslen((TCHAR *)buffer) == 0)
-				sqlBuffer = _tcsdup("\r\n"); // set the end of line symbols
+				sqlBuffer = _tcsdup("\3"); // set the end of text symbol
 			else
 				sqlBuffer = _tcsdup((TCHAR *)buffer);
 
@@ -1020,7 +1020,8 @@ static ORACLE_RESULT *ProcessQueryResults(ORACLE_CONN *pConn, OCI_Statement *han
 						bool emptyFlag = false;
 						
 						// If there is only end of string symbols, the result should be empty
-						if(length == 2 && _tcsicmp(OCI_GetString(resultSet, i + 1), _T("\r\n")) == 0)
+						if((length == 1 && _tcsicmp(OCI_GetString(resultSet, i + 1), _T("\3")) == 0) ||
+						   (length == 2 && _tcsicmp(OCI_GetString(resultSet, i + 1), "\r\n") == 0))
 							pResult->pData[nPos] = (TCHAR *)nx_memdup("\0\0\0", sizeof(TCHAR));
 						else
 						{
