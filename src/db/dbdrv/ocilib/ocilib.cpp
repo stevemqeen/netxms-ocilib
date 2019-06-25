@@ -1435,6 +1435,7 @@ extern "C" bool EXPORT DrvFetchSeek(ORACLE_UNBUFFERED_RESULT *result, UINT32 mod
 		if (!success)
 		{
 			SetLastError(result->connection);
+			nxlog_debug(2, "DrvFetchSeek failed[%d]: %s", result->connection->lastErrorCode, result->connection->lastErrorText);
 			return success;
 		}
 	}
@@ -1448,6 +1449,7 @@ extern "C" bool EXPORT DrvFetchSeek(ORACLE_UNBUFFERED_RESULT *result, UINT32 mod
 	else
 	{
 		SetLastError(result->connection);
+		nxlog_debug(2, "DrvFetchSeek failed[%d]: %s", result->connection->lastErrorCode, result->connection->lastErrorText);
 	}
 
 	return success;
