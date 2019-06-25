@@ -1407,6 +1407,70 @@ extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectPreparedUnbuffered(ORACLE_CON
 }
 
 /**
+ * Set the fetch mode of a SQL statement
+ * Must be called before any OCI_ExecuteXXX() call
+ * Modes :
+ *  OCI_SFM_DEFAULT
+ *  OCI_SFM_SCROLLABLE
+ */
+extern "C" bool __EXPORT DrvSetFetchMode(ORACLE_UNBUFFERED_RESULT *result, UINT32 mode)
+{
+	bool success = false;
+
+	if (result == NULL)
+		return success;
+
+	if (OCI_SetFetchMode(result->handleStmt, mode))
+	{
+		success = true;
+	}
+	else
+	{
+		SetLastError(result->connection);
+	}
+
+	return success;
+}
+
+/**
+ * Custom Fetch for result set
+ * Modes :
+ *  OCI_SFD_ABSOLUTE
+ *  OCI_SFD_RELATIVE
+ */
+extern "C" bool __EXPORT DrvFetchSeek(ORACLE_UNBUFFERED_RESULT *result, UINT32 mode, int offset)
+{
+	bool success = false;
+
+	if (result == NULL)
+		return success;
+
+	if (OCI_GetFetchMode(result->handleStmt) == OCI_SFM_SCROLLABLE)
+	{
+		success = OCI_SetFetchSize(result->handleStmt, 1); // Note: You must set the fetching size to 1
+
+		if (!success)
+		{
+			SetLastError(result->connection);
+			return success;
+		}
+	}
+	
+	OCI_Resultset *resultSet = OCI_GetResultset(result->handleStmt);
+
+	if (OCI_FetchSeek(resultSet, mode, offset))
+	{
+		success = true;
+	}
+	else
+	{
+		SetLastError(result->connection);
+	}
+
+	return success;
+}
+
+/**
  * Fetch next result line from unbuffered SELECT results
  */
 extern "C" bool EXPORT DrvFetch(ORACLE_UNBUFFERED_RESULT *result)

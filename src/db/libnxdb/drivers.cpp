@@ -205,6 +205,8 @@ DB_DRIVER LIBNXDB_EXPORTABLE DBLoadDriver(const TCHAR *module, const TCHAR *init
 	driver->m_fpDrvSelectPrepared = (DBDRV_RESULT (*)(DBDRV_CONNECTION, DBDRV_STATEMENT, DWORD *, WCHAR *))DLGetSymbolAddrEx(driver->m_handle, "DrvSelectPrepared");
    driver->m_fpDrvSelectPreparedUnbuffered = (DBDRV_UNBUFFERED_RESULT (*)(DBDRV_CONNECTION, DBDRV_STATEMENT, DWORD *, WCHAR *))DLGetSymbolAddrEx(driver->m_handle, "DrvSelectPreparedUnbuffered");
    driver->m_fpDrvFetch = (bool (*)(DBDRV_UNBUFFERED_RESULT))DLGetSymbolAddrEx(driver->m_handle, "DrvFetch");
+   driver->m_fpDrvFetchSeek = (bool (*)(DBDRV_UNBUFFERED_RESULT, UINT32, int))DLGetSymbolAddrEx(driver->m_handle, "DrvFetchSeek");
+   driver->m_fpDrvSetFetchMode = (bool (*)(DBDRV_UNBUFFERED_RESULT, UINT32))DLGetSymbolAddrEx(driver->m_handle, "DrvSetFetchMode");
    driver->m_fpDrvGetFieldLength = (LONG (*)(DBDRV_RESULT, int, int))DLGetSymbolAddrEx(driver->m_handle, "DrvGetFieldLength");
    driver->m_fpDrvGetFieldLengthUnbuffered = (LONG (*)(DBDRV_UNBUFFERED_RESULT, int))DLGetSymbolAddrEx(driver->m_handle, "DrvGetFieldLengthUnbuffered");
    driver->m_fpDrvGetField = (WCHAR* (*)(DBDRV_RESULT, int, int, WCHAR *, int))DLGetSymbolAddrEx(driver->m_handle, "DrvGetField");

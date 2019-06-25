@@ -896,6 +896,22 @@ bool LIBNXDB_EXPORTABLE DBFetch(DB_UNBUFFERED_RESULT hResult)
 }
 
 /**
+ * Set fetch mode for unbuffered SELECT result
+ */
+bool LIBNXDB_EXPORTABLE DBSetFetchMode(DB_UNBUFFERED_RESULT hResult, UINT32 mode)
+{
+   return hResult->m_driver->m_fpDrvSetFetchMode(hResult->m_data, mode);
+}
+
+/**
+ * Fetch Seek for unbuffered SELECT result
+ */
+bool LIBNXDB_EXPORTABLE DBFetchSeek(DB_UNBUFFERED_RESULT hResult, UINT32 mode, int offset)
+{
+   return hResult->m_driver->m_fpDrvFetchSeek(hResult->m_data, mode, offset);
+}
+
+/**
  * Get field's value from unbuffered SELECT result
  */
 TCHAR LIBNXDB_EXPORTABLE *DBGetField(DB_UNBUFFERED_RESULT hResult, int iColumn, TCHAR *pBuffer, int iBufSize)
