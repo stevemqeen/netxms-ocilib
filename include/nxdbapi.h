@@ -67,6 +67,12 @@
 #define DB_SYNTAX_UNKNOWN	-1
 
 /**
+ * Ocilib defines
+ */
+#define OCI_SFM_DEFAULT    0
+#define OCI_SFM_SCROLLABLE 1
+
+/**
  * Database connection structures
  */
 struct db_driver_t;
