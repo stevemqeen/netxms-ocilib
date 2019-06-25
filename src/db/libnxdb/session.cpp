@@ -900,7 +900,14 @@ bool LIBNXDB_EXPORTABLE DBFetch(DB_UNBUFFERED_RESULT hResult)
  */
 bool LIBNXDB_EXPORTABLE DBFetchSeek(DB_UNBUFFERED_RESULT hResult, UINT32 mode, int offset)
 {
-   return hResult->m_driver->m_fpDrvFetchSeek(hResult->m_data, mode, offset);
+   bool result = hResult->m_driver->m_fpDrvFetchSeek(hResult->m_data, mode, offset);
+
+   if (!result)
+   {
+      nxlog_debug(2, "DBFetchSeek failed[%d]: %s", hResult->connection->lastErrorCode, hResult->connection->lastErrorText);
+   }
+
+   return result;
 }
 
 /**
