@@ -1342,6 +1342,7 @@ extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectUnbuffered(ORACLE_CONN *pConn
 		if (!OCI_SetFetchMode(handleStmt, mode))
 		{
 			SetLastError(pConn);
+			nxlog_debug(2, _T("DrvSelectUnbuffered failed[%d]: %s"), pConn->lastErrorCode, pConn->lastErrorText);
 			*pdwError = IsConnectionError(pConn);
 		}
 	}
