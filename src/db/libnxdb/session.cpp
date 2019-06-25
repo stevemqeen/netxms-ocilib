@@ -904,7 +904,7 @@ bool LIBNXDB_EXPORTABLE DBFetchSeek(DB_UNBUFFERED_RESULT hResult, UINT32 mode, i
 
    if (!result)
    {
-      nxlog_debug(2, "DBFetchSeek failed[%d]: %s", hResult->connection->lastErrorCode, hResult->connection->lastErrorText);
+      nxlog_debug(2, "DBFetchSeek failed[%d]: %s", hResult.connection->lastErrorCode, hResult.connection->lastErrorText);
    }
 
    return result;
