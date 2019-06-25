@@ -70,7 +70,9 @@
  * Ocilib defines
  */
 #define OCI_SFM_DEFAULT    0
-#define OCI_SFM_SCROLLABLE 1
+#define OCI_SFM_SCROLLABLE 0x08
+#define OCI_SFD_ABSOLUTE   0x20
+#define OCI_SFD_RELATIVE   0x40
 
 /**
  * Database connection structures
