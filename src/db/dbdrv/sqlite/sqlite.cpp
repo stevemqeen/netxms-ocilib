@@ -593,7 +593,7 @@ extern "C" const char EXPORT *DrvGetColumnName(SQLITE_RESULT *hResult, int colum
 /**
  * Perform unbuffered SELECT query
  */
-extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectUnbuffered(SQLITE_CONN *hConn, WCHAR *pwszQuery, DWORD *pdwError, WCHAR *errorText)
+extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectUnbuffered(SQLITE_CONN *hConn, WCHAR *pwszQuery, DWORD *pdwError, WCHAR *errorText, UINT32 mode)
 {
    SQLITE_UNBUFFERED_RESULT *result;
    char *pszQueryUTF8;
