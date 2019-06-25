@@ -811,7 +811,7 @@ void LIBNXDB_EXPORTABLE DBFreeResult(DB_RESULT hResult)
 /**
  * Unbuffered SELECT query
  */
-DB_UNBUFFERED_RESULT LIBNXDB_EXPORTABLE DBSelectUnbufferedEx(DB_HANDLE hConn, const TCHAR *szQuery, TCHAR *errorText)
+DB_UNBUFFERED_RESULT LIBNXDB_EXPORTABLE DBSelectUnbufferedEx(DB_HANDLE hConn, const TCHAR *szQuery, TCHAR *errorText, UINT32 mode)
 {
    DBDRV_UNBUFFERED_RESULT hResult;
 	DB_UNBUFFERED_RESULT result = NULL;
@@ -830,11 +830,11 @@ DB_UNBUFFERED_RESULT LIBNXDB_EXPORTABLE DBSelectUnbufferedEx(DB_HANDLE hConn, co
    s_perfSelectQueries++;
    s_perfTotalQueries++;
 
-   hResult = hConn->m_driver->m_fpDrvSelectUnbuffered(hConn->m_connection, pwszQuery, &dwError, wcErrorText);
+   hResult = hConn->m_driver->m_fpDrvSelectUnbuffered(hConn->m_connection, pwszQuery, &dwError, wcErrorText, mode);
    if ((hResult == NULL) && (dwError == DBERR_CONNECTION_LOST) && hConn->m_reconnectEnabled)
    {
       if (DBReconnect(hConn))
-         hResult = hConn->m_driver->m_fpDrvSelectUnbuffered(hConn->m_connection, pwszQuery, &dwError, wcErrorText);
+         hResult = hConn->m_driver->m_fpDrvSelectUnbuffered(hConn->m_connection, pwszQuery, &dwError, wcErrorText, mode);
    }
 
    ms = GetCurrentTimeMs() - ms;
@@ -880,11 +880,11 @@ DB_UNBUFFERED_RESULT LIBNXDB_EXPORTABLE DBSelectUnbufferedEx(DB_HANDLE hConn, co
 #undef wcErrorText
 }
 
-DB_UNBUFFERED_RESULT LIBNXDB_EXPORTABLE DBSelectUnbuffered(DB_HANDLE hConn, const TCHAR *query)
+DB_UNBUFFERED_RESULT LIBNXDB_EXPORTABLE DBSelectUnbuffered(DB_HANDLE hConn, const TCHAR *query, UINT32 mode)
 {
    TCHAR errorText[DBDRV_MAX_ERROR_TEXT];
 
-	return DBSelectUnbufferedEx(hConn, query, errorText);
+	return DBSelectUnbufferedEx(hConn, query, errorText, mode);
 }
 
 /**
@@ -893,14 +893,6 @@ DB_UNBUFFERED_RESULT LIBNXDB_EXPORTABLE DBSelectUnbuffered(DB_HANDLE hConn, cons
 bool LIBNXDB_EXPORTABLE DBFetch(DB_UNBUFFERED_RESULT hResult)
 {
 	return hResult->m_driver->m_fpDrvFetch(hResult->m_data);
-}
-
-/**
- * Set fetch mode for unbuffered SELECT result
- */
-bool LIBNXDB_EXPORTABLE DBSetFetchMode(DB_UNBUFFERED_RESULT hResult, UINT32 mode)
-{
-   return hResult->m_driver->m_fpDrvSetFetchMode(hResult->m_data, mode);
 }
 
 /**

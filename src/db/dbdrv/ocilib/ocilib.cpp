@@ -1328,7 +1328,7 @@ static ORACLE_UNBUFFERED_RESULT *ProcessUnbufferedQueryResults(ORACLE_CONN *pCon
 /**
  * Perform unbuffered SELECT query
  */
-extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectUnbuffered(ORACLE_CONN *pConn, WCHAR *pwszQuery, DWORD *pdwError, WCHAR *errorText)
+extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectUnbuffered(ORACLE_CONN *pConn, WCHAR *pwszQuery, DWORD *pdwError, WCHAR *errorText, UINT32 mode)
 {
 	ORACLE_UNBUFFERED_RESULT *result = NULL;
 
@@ -1336,6 +1336,15 @@ extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectUnbuffered(ORACLE_CONN *pConn
 
 	OCI_SetStatementCacheSize(pConn->handleConnection, 0);
 	OCI_Statement *handleStmt = OCI_StatementCreate(pConn->handleConnection);
+
+	if (OCI_SFM_SCROLLABLE == mode)
+	{
+		if (!OCI_SetFetchMode(handleStmt, mode))
+		{
+			SetLastError(pConn);
+			*pdwError = IsConnectionError(pConn);
+		}
+	}
 
 	if(OCI_Prepare(handleStmt, (otext *)pwszQuery) == true)
 	{	
@@ -1407,38 +1416,12 @@ extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectPreparedUnbuffered(ORACLE_CON
 }
 
 /**
- * Set the fetch mode of a SQL statement
- * Must be called before any OCI_ExecuteXXX() call
- * Modes :
- *  OCI_SFM_DEFAULT
- *  OCI_SFM_SCROLLABLE
- */
-extern "C" bool __EXPORT DrvSetFetchMode(ORACLE_UNBUFFERED_RESULT *result, UINT32 mode)
-{
-	bool success = false;
-
-	if (result == NULL)
-		return success;
-
-	if (OCI_SetFetchMode(result->handleStmt, mode))
-	{
-		success = true;
-	}
-	else
-	{
-		SetLastError(result->connection);
-	}
-
-	return success;
-}
-
-/**
  * Custom Fetch for result set
  * Modes :
  *  OCI_SFD_ABSOLUTE
  *  OCI_SFD_RELATIVE
  */
-extern "C" bool __EXPORT DrvFetchSeek(ORACLE_UNBUFFERED_RESULT *result, UINT32 mode, int offset)
+extern "C" bool EXPORT DrvFetchSeek(ORACLE_UNBUFFERED_RESULT *result, UINT32 mode, int offset)
 {
 	bool success = false;
 
