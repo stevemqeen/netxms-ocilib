@@ -186,8 +186,8 @@ bool LIBNXDB_EXPORTABLE DBGetFieldByteArray2(DB_RESULT hResult, int iRow, int iC
                                              BYTE *data, int nSize, int nDefault);
 uuid LIBNXDB_EXPORTABLE DBGetFieldGUID(DB_RESULT hResult, int iRow, int iColumn);
 
-DB_UNBUFFERED_RESULT LIBNXDB_EXPORTABLE DBSelectUnbuffered(DB_HANDLE hConn, const TCHAR *szQuery, UINT32 mode = OCI_SFM_DEFAULT);
-DB_UNBUFFERED_RESULT LIBNXDB_EXPORTABLE DBSelectUnbufferedEx(DB_HANDLE hConn, const TCHAR *szQuery, TCHAR *errorText, UINT32 mode = OCI_SFM_DEFAULT);
+DB_UNBUFFERED_RESULT LIBNXDB_EXPORTABLE DBSelectUnbuffered(DB_HANDLE hConn, const TCHAR *szQuery, UINT32 mode = OCI_SFM_DEFAULT, bool unlockOnResult = false);
+DB_UNBUFFERED_RESULT LIBNXDB_EXPORTABLE DBSelectUnbufferedEx(DB_HANDLE hConn, const TCHAR *szQuery, TCHAR *errorText, UINT32 mode = OCI_SFM_DEFAULT, bool unlockOnResult = false);
 void LIBNXDB_EXPORTABLE DBFetchFreeResult(DB_UNBUFFERED_RESULT hResult);
 bool LIBNXDB_EXPORTABLE DBFetch(DB_UNBUFFERED_RESULT hResult);
 bool LIBNXDB_EXPORTABLE DBFetchSeek(DB_UNBUFFERED_RESULT hResult, UINT32 mode, int offset);

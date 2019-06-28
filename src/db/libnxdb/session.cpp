@@ -811,7 +811,7 @@ void LIBNXDB_EXPORTABLE DBFreeResult(DB_RESULT hResult)
 /**
  * Unbuffered SELECT query
  */
-DB_UNBUFFERED_RESULT LIBNXDB_EXPORTABLE DBSelectUnbufferedEx(DB_HANDLE hConn, const TCHAR *szQuery, TCHAR *errorText, UINT32 mode)
+DB_UNBUFFERED_RESULT LIBNXDB_EXPORTABLE DBSelectUnbufferedEx(DB_HANDLE hConn, const TCHAR *szQuery, TCHAR *errorText, UINT32 mode, bool unlockOnResult)
 {
    DBDRV_UNBUFFERED_RESULT hResult;
 	DB_UNBUFFERED_RESULT result = NULL;
@@ -874,17 +874,22 @@ DB_UNBUFFERED_RESULT LIBNXDB_EXPORTABLE DBSelectUnbufferedEx(DB_HANDLE hConn, co
 		result->m_connection = hConn;
 		result->m_data = hResult;
 	}
+	
+	if(unlockOnResult)
+	{
+		MutexUnlock(hConn->m_mutexTransLock);
+	}
 
    return result;
 #undef pwszQuery
 #undef wcErrorText
 }
 
-DB_UNBUFFERED_RESULT LIBNXDB_EXPORTABLE DBSelectUnbuffered(DB_HANDLE hConn, const TCHAR *query, UINT32 mode)
+DB_UNBUFFERED_RESULT LIBNXDB_EXPORTABLE DBSelectUnbuffered(DB_HANDLE hConn, const TCHAR *query, UINT32 mode, bool unlockOnResult)
 {
    TCHAR errorText[DBDRV_MAX_ERROR_TEXT];
 
-	return DBSelectUnbufferedEx(hConn, query, errorText, mode);
+	return DBSelectUnbufferedEx(hConn, query, errorText, mode, unlockOnResult);
 }
 
 /**
