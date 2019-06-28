@@ -1506,6 +1506,7 @@ extern "C" bool EXPORT DrvFetch(ORACLE_UNBUFFERED_RESULT *result)
 					result->pBuffers[i].isNull = 0;
 					result->pBuffers[i].nLength = len * sizeof(WCHAR);
 				}
+				
 				if (NULL != ucs2string)
 				{
 					free(ucs2string);
