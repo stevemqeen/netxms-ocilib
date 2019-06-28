@@ -1068,6 +1068,10 @@ static ORACLE_RESULT *ProcessQueryResults(ORACLE_CONN *pConn, OCI_Statement *han
 							memcpy(pResult->pData[nPos], result, length);
 #endif
 							pResult->pData[nPos][length] = 0;
+						}
+						
+						if(NULL != result)
+						{
 							free(result);
 						}
 					}
@@ -1273,7 +1277,7 @@ extern "C" void EXPORT DrvFetchFreeResult(ORACLE_UNBUFFERED_RESULT *result)
 
 	for(int i = 0; i < result->nCols; i++)
 	{
-		free(result->pBuffers[i].pData);
+		safe_free(result->pBuffers[i].pData);
 		if (result->pBuffers[i].lobLocator != NULL) // this maybe not needed anymore
 		{
 			free(result->pBuffers[i].lobLocator);
@@ -1478,7 +1482,7 @@ extern "C" bool EXPORT DrvFetch(ORACLE_UNBUFFERED_RESULT *result)
 
 			if(OCI_IsNull(resultSet, i + 1) == true)
 			{
-				result->pBuffers[i].pData = (UCS2CHAR *)nx_memdup("\0\0\0", sizeof(UCS2CHAR));
+				result->pBuffers[i].pData = (WCHAR *)nx_memdup("\0\0\0", sizeof(WCHAR));
 				result->pBuffers[i].isNull = 1;
 				result->pBuffers[i].nLength = 0;
 			}
@@ -1486,13 +1490,27 @@ extern "C" bool EXPORT DrvFetch(ORACLE_UNBUFFERED_RESULT *result)
 			{
 				UCS2CHAR *ucs2string = UCS2StringFromUCS4String(OCI_GetString(resultSet, i + 1));
 				int len = ucs2_strlen(ucs2string);
-
-				result->pBuffers[i].pData = (UCS2CHAR *)malloc((len + 31) * sizeof(UCS2CHAR));
-				memcpy(result->pBuffers[i].pData, ucs2string, len * sizeof(UCS2CHAR));
-				result->pBuffers[i].isNull = 0;
-				result->pBuffers[i].nLength = len * sizeof(UCS2CHAR);
-
-				free(ucs2string);
+				
+				// If there is only end of string symbols, the result should be empty
+				if(len == 2 && _tcsicmp(OCI_GetString(resultSet, i + 1), _T("\r\n")) == 0)
+					result->pBuffers[i].pData = (WCHAR *)nx_memdup("\0\0\0", sizeof(WCHAR));
+				else
+				{	
+					result->pBuffers[i].pData = (WCHAR*)malloc(sizeof(WCHAR) * (len + 1));
+#if UNICODE_UCS4
+					ucs2_to_ucs4(ucs2string, len, result->pBuffers[i].pData, len + 1);
+#else
+					memcpy(result->pBuffers[i].pData, ucs2string, len);
+#endif
+					result->pBuffers[i].pData[len] = 0;
+					result->pBuffers[i].isNull = 0;
+					result->pBuffers[i].nLength = len * sizeof(WCHAR);
+				}
+				
+				if (NULL != ucs2string)
+				{
+					free(ucs2string);
+				}	
 			}
 			else
 			{
@@ -1504,18 +1522,15 @@ extern "C" bool EXPORT DrvFetch(ORACLE_UNBUFFERED_RESULT *result)
 					if(nWidth > 0)
 					{
 						unsigned int max_len = nWidth, max_byte = 0;
-						result->pBuffers[i].pData = NULL;
+						result->pBuffers[i].pData = (WCHAR *)malloc((nWidth + 1) * sizeof(WCHAR));
 						WCHAR *pLob = (WCHAR*)malloc((nWidth + 1) * sizeof(WCHAR));
 
 						if(OCI_LobRead2(lob, (WCHAR*)pLob, (unsigned int*)&max_len, (unsigned int*)&max_byte))
 						{
-							UCS2CHAR *ucs2lob = UCS2StringFromUCS4String(pLob);
-							int len = ucs2_strlen(ucs2lob);
-
-							memcpy(result->pBuffers[i].pData, ucs2lob, len);
+							wcsncpy(result->pBuffers[i].pData, pLob, nWidth);
+							result->pBuffers[i].pData[nWidth] = 0;
 							result->pBuffers[i].isNull = 0;
-							result->pBuffers[i].nLength = max_len * sizeof(UCS2CHAR);
-							free(ucs2lob);
+							result->pBuffers[i].nLength = max_len * sizeof(WCHAR);
 						}
 						else
 						{
@@ -1527,7 +1542,7 @@ extern "C" bool EXPORT DrvFetch(ORACLE_UNBUFFERED_RESULT *result)
 					}
 					else
 					{
-						result->pBuffers[i].pData = (UCS2CHAR *)nx_memdup("\0\0\0", sizeof(UCS2CHAR));
+						result->pBuffers[i].pData = (WCHAR *)nx_memdup("\0\0\0", sizeof(WCHAR));
 						result->pBuffers[i].isNull = 1;
 						result->pBuffers[i].nLength = 0;
 					}
@@ -1588,9 +1603,9 @@ extern "C" WCHAR EXPORT *DrvGetFieldUnbuffered(ORACLE_UNBUFFERED_RESULT *result,
 	}
 	else
 	{
-		nLen = min(nBufSize - 1, ((int)(result->pBuffers[nColumn].nLength / sizeof(UCS2CHAR))));
-#if UNICODE_UCS4
-		ucs2_to_ucs4(result->pBuffers[nColumn].pData, nLen, pBuffer, nLen + 1);
+		nLen = min(nBufSize - 1, ((int)(result->pBuffers[nColumn].nLength / sizeof(WCHAR))));
+#if _WIN32
+		wcsncpy_s(pBuffer, nBufSize, result->pBuffers[nColumn]->pData, _TRUNCATE);
 #else
 		memcpy(pBuffer, result->pBuffers[nColumn].pData, nLen * sizeof(WCHAR));
 #endif
