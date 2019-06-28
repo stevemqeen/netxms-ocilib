@@ -1069,6 +1069,7 @@ static ORACLE_RESULT *ProcessQueryResults(ORACLE_CONN *pConn, OCI_Statement *han
 #endif
 							pResult->pData[nPos][length] = 0;
 						}
+						
 						if(NULL != result)
 						{
 							free(result);
