@@ -843,6 +843,8 @@ extern "C" void EXPORT DrvFreeStatement(ORACLE_STATEMENT *stmt)
 		return;
 
 	MutexLock(stmt->connection->mutexQueryLock);
+	stmt->connection->lastErrorText[0] = 0;
+	stmt->connection->lastErrorCode = 0;
 	OCI_StatementFree(stmt->handleStmt);
 	MutexUnlock(stmt->connection->mutexQueryLock);
 
