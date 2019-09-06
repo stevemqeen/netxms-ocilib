@@ -1579,7 +1579,7 @@ extern "C" LONG EXPORT DrvGetFieldLengthUnbuffered(ORACLE_UNBUFFERED_RESULT *res
 	if(result->pBuffers[nColumn].isNull)
 		return 0;
 
-	return (LONG)(result->pBuffers[nColumn].nLength / sizeof(UCS2CHAR));
+	return (LONG)(result->pBuffers[nColumn].nLength / sizeof(WCHAR));
 }
 
 /**
