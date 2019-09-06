@@ -871,6 +871,8 @@ extern "C" void EXPORT DrvFreeStatement(ORACLE_STATEMENT *stmt)
 		return;
 
 	MutexLock(stmt->connection->mutexQueryLock);
+	stmt->connection->lastErrorText[0] = 0;
+	stmt->connection->lastErrorCode = 0;
 	OCI_StatementFree(stmt->handleStmt);
 	MutexUnlock(stmt->connection->mutexQueryLock);
 
@@ -1580,7 +1582,7 @@ extern "C" LONG EXPORT DrvGetFieldLengthUnbuffered(ORACLE_UNBUFFERED_RESULT *res
 	if(result->pBuffers[nColumn].isNull)
 		return 0;
 
-	return (LONG)(result->pBuffers[nColumn].nLength / sizeof(UCS2CHAR));
+	return (LONG)(result->pBuffers[nColumn].nLength / sizeof(WCHAR));
 }
 
 /**
