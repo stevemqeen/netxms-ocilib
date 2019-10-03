@@ -240,6 +240,7 @@ target
 /tools/fixprop
 /webui/eclipse
 /x64
+/dist
 
 # Eclipse CDT
 .metadata
