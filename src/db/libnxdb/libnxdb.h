@@ -66,7 +66,7 @@ struct db_driver_t
 	LONG (* m_fpDrvGetFieldLengthUnbuffered)(DBDRV_UNBUFFERED_RESULT, int);
 	TCHAR* (* m_fpDrvGetField)(DBDRV_RESULT, int, int, TCHAR *, int);
 	char* (* m_fpDrvGetFieldUTF8)(DBDRV_RESULT, int, int, char *, int);
-	WCHAR* (* m_fpDrvGetFieldUnbuffered)(DBDRV_UNBUFFERED_RESULT, int, WCHAR *, int);
+	TCHAR* (* m_fpDrvGetFieldUnbuffered)(DBDRV_UNBUFFERED_RESULT, int, TCHAR *, int);
    char* (* m_fpDrvGetFieldUnbufferedUTF8)(DBDRV_UNBUFFERED_RESULT, int, char *, int);
 	int (* m_fpDrvGetNumRows)(DBDRV_RESULT);
 	void (* m_fpDrvFreeResult)(DBDRV_RESULT);

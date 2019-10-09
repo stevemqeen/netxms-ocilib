@@ -1383,46 +1383,29 @@ extern "C" bool EXPORT DrvFetch(ORACLE_UNBUFFERED_RESULT *result)
 				result->pBuffers[i].isNull = 1;
 				result->pBuffers[i].nLength = 0;
 			}
-			else if(OCI_ColumnGetType(col) != OCI_CDT_LOB)
-			{
-				TCHAR *utf8string = (TCHAR*)OCI_GetString(resultSet, i + 1);
-				int len = _tcslen(utf8string);
-
-				result->pBuffers[i].pData = (TCHAR *)malloc((len + 31) * sizeof(TCHAR));
-				memcpy(result->pBuffers[i].pData, utf8string, len * sizeof(TCHAR));
-				result->pBuffers[i].isNull = 0;
-				result->pBuffers[i].nLength = len * sizeof(TCHAR);
-
-				free(utf8string);
-			}
-			else
+			else if (OCI_ColumnGetType(col) == OCI_CDT_LOB)
 			{
 				OCI_Lob *lob = OCI_GetLob(resultSet, i + 1);
-				if(lob != NULL)
+
+				if (lob != NULL)
 				{
-					ub2 nWidth = OCI_LobGetLength(lob);
+					int length = OCI_LobGetLength(lob);
 
-					if(nWidth > 0)
+					if (length > 0)
 					{
-						unsigned int max_len = nWidth, max_byte = 0;
-						result->pBuffers[i].pData = NULL;
-						TCHAR *pLob = (TCHAR*)malloc((nWidth + 1) * sizeof(TCHAR));
+						int max_chars = length, max_bytes = 0;
+						TCHAR *resultString = (TCHAR*)malloc((length + 1) * sizeof(TCHAR));
+						result->pBuffers[i].pData = (TCHAR*)malloc((length + 1) * sizeof(TCHAR));
 
-						if(OCI_LobRead2(lob, (TCHAR*)pLob, (unsigned int*)&max_len, (unsigned int*)&max_byte))
+						if (OCI_LobRead2(lob, (TCHAR*)resultString, (unsigned int*)&max_chars, (unsigned int*)&max_bytes))
 						{
-							int len = _tcslen(pLob);
-
-							memcpy(result->pBuffers[i].pData, pLob, len);
+							_tcsncpy(result->pBuffers[i].pData, resultString, length);
+							result->pBuffers[i].pData[length] = 0;
 							result->pBuffers[i].isNull = 0;
-							result->pBuffers[i].nLength = max_len * sizeof(TCHAR);
-						}
-						else
-						{
-							SetLastError(result->connection);
-							success = false;
+							result->pBuffers[i].nLength = max_chars * sizeof(TCHAR);
 						}
 
-						free(pLob);
+						free(resultString);
 					}
 					else
 					{
@@ -1433,8 +1416,37 @@ extern "C" bool EXPORT DrvFetch(ORACLE_UNBUFFERED_RESULT *result)
 				}
 				else
 				{
+					result->pBuffers[i].pData = (TCHAR *)nx_memdup("\0\0\0", sizeof(TCHAR));
+					result->pBuffers[i].isNull = 1;
+					result->pBuffers[i].nLength = 0;
+					
 					SetLastError(result->connection);
 					success = false;
+				}
+			}
+			else
+			{
+				TCHAR *resultString = _tcsdup(OCI_GetString(resultSet, i + 1));
+				int length = _tcslen(resultString);
+				bool emptyFlag = false;
+
+				// If there is only end of string symbols, the result should be empty
+				if (length == 2 && _tcsicmp(OCI_GetString(resultSet, i + 1), "\r\n") == 0)
+				{
+					result->pBuffers[i].pData = (TCHAR *)nx_memdup("\0\0\0", sizeof(TCHAR));
+				}
+				else
+				{
+					result->pBuffers[i].pData = (TCHAR *)malloc((length + 1) * sizeof(TCHAR));
+					memcpy(result->pBuffers[i].pData, resultString, length);
+					result->pBuffers[i].pData[length] = 0;
+					result->pBuffers[i].isNull = 0;
+					result->pBuffers[i].nLength = length * sizeof(TCHAR);
+				}
+
+				if (NULL != resultString)
+				{
+					free(resultString);
 				}
 			}
 		}
@@ -1461,7 +1473,7 @@ extern "C" LONG EXPORT DrvGetFieldLengthUnbuffered(ORACLE_UNBUFFERED_RESULT *res
 	if(result->pBuffers[nColumn].isNull)
 		return 0;
 
-	return (LONG)(result->pBuffers[nColumn].nLength / sizeof(UCS2CHAR));
+	return (LONG)(result->pBuffers[nColumn].nLength / sizeof(TCHAR));
 }
 
 /**

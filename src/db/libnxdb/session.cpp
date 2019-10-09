@@ -848,75 +848,74 @@ bool LIBNXDB_EXPORTABLE DBFetch(DB_UNBUFFERED_RESULT hResult)
 TCHAR LIBNXDB_EXPORTABLE *DBGetField(DB_UNBUFFERED_RESULT hResult, int iColumn, TCHAR *pBuffer, int iBufSize)
 {
 #ifdef UNICODE
-   if (pBuffer != NULL)
-   {
-	   return hResult->m_driver->m_fpDrvGetFieldUnbuffered(hResult->m_data, iColumn, pBuffer, iBufSize);
-   }
-   else
-   {
-      INT32 nLen;
-      WCHAR *pszTemp;
+	if (pBuffer != NULL)
+	{
+		return hResult->m_driver->m_fpDrvGetFieldUnbuffered(hResult->m_data, iColumn, pBuffer, iBufSize);
+	}
+	else
+	{
+		INT32 nLen;
+		WCHAR *pszTemp;
 
-      nLen = hResult->m_driver->m_fpDrvGetFieldLengthUnbuffered(hResult->m_data, iColumn);
-      if (nLen == -1)
-      {
-         pszTemp = NULL;
-      }
-      else
-      {
-         nLen++;
-         pszTemp = (WCHAR *)malloc(nLen * sizeof(WCHAR));
-         hResult->m_driver->m_fpDrvGetFieldUnbuffered(hResult->m_data, iColumn, pszTemp, nLen);
-      }
-      return pszTemp;
-   }
+		nLen = hResult->m_driver->m_fpDrvGetFieldLengthUnbuffered(hResult->m_data, iColumn);
+		if (nLen == -1)
+		{
+			pszTemp = NULL;
+		}
+		else
+		{
+			nLen++;
+			pszTemp = (TCHAR *)malloc(nLen * sizeof(TCHAR));
+			hResult->m_driver->m_fpDrvGetFieldUnbuffered(hResult->m_data, iColumn, pszTemp, nLen);
+		}
+		return pszTemp;
+	}
 #else
-   WCHAR *pwszData, *pwszBuffer;
-   char *pszRet;
-   int nLen;
+	TCHAR *pwszData, *pwszBuffer;
+	char *pszRet;
+	int nLen;
 
-   if (pBuffer != NULL)
-   {
-		pwszBuffer = (WCHAR *)malloc(iBufSize * sizeof(WCHAR));
+	if (pBuffer != NULL)
+	{
+		pwszBuffer = (TCHAR *)malloc(iBufSize * sizeof(TCHAR));
 		if (hResult->m_driver->m_fpDrvGetFieldUnbuffered(hResult->m_data, iColumn, pwszBuffer, iBufSize) != NULL)
 		{
-			WideCharToMultiByte(CP_ACP, WC_COMPOSITECHECK | WC_DEFAULTCHAR,
-									  pwszBuffer, -1, pBuffer, iBufSize, NULL, NULL);
-			pszRet = pBuffer;
+			pszRet = _tcsdup(pwszBuffer);
 		}
 		else
 		{
 			pszRet = NULL;
 		}
 		free(pwszBuffer);
-   }
-   else
-   {
+	}
+	else
+	{
 		nLen = hResult->m_driver->m_fpDrvGetFieldLengthUnbuffered(hResult->m_data, iColumn);
-      if (nLen == -1)
-      {
-         pszRet = NULL;
-      }
-      else
-      {
-         nLen++;
-         pwszBuffer = (WCHAR *)malloc(nLen * sizeof(WCHAR));
+		
+		if (nLen == -1)
+		{
+			pszRet = NULL;
+		}
+		else
+		{
+			nLen++;
+			pwszBuffer = (TCHAR *)malloc(nLen * sizeof(TCHAR));
 			pwszData = hResult->m_driver->m_fpDrvGetFieldUnbuffered(hResult->m_data, iColumn, pwszBuffer, nLen);
-         if (pwszData != NULL)
-         {
-            nLen = (int)wcslen(pwszData) + 1;
-            pszRet = (char *)malloc(nLen);
-            WideCharToMultiByte(CP_ACP, WC_COMPOSITECHECK | WC_DEFAULTCHAR,
-                                pwszData, -1, pszRet, nLen, NULL, NULL);
-         }
-         else
-         {
-            pszRet = NULL;
-         }
-         free(pwszBuffer);
-      }
-   }
-   return pszRet;
+			
+			if (pwszData != NULL)
+			{
+				nLen = (int)_tcslen(pwszData) + 1;
+				pszRet = (char *)malloc(nLen);
+				_tcscpy(pszRet, pwszData);
+			}
+			else
+			{
+				pszRet = NULL;
+			}
+			free(pwszBuffer);
+		}
+	}
+	return pszRet;
 #endif
 }
 
@@ -956,10 +955,9 @@ char LIBNXDB_EXPORTABLE *DBGetFieldUTF8(DB_UNBUFFERED_RESULT hResult, int iColum
          return NULL;
       nLen = nLen * 2 + 1;  // increase buffer size because driver may return field length in characters
 
-      WCHAR *wtemp = (WCHAR *)malloc(nLen * sizeof(WCHAR));
+      TCHAR *wtemp = (TCHAR *)malloc(nLen * sizeof(TCHAR));
       hResult->m_driver->m_fpDrvGetFieldUnbuffered(hResult->m_data, iColumn, wtemp, nLen);
       char *value = (buffer != NULL) ? buffer : (char *)malloc(nLen);
-      WideCharToMultiByte(CP_UTF8, 0, wtemp, -1, value, (buffer != NULL) ? iBufSize : nLen, NULL, NULL);
       free(wtemp);
       return value;
    }

@@ -209,7 +209,7 @@ DB_DRIVER LIBNXDB_EXPORTABLE DBLoadDriver(const TCHAR *module, const TCHAR *init
    driver->m_fpDrvGetFieldLengthUnbuffered = (LONG (*)(DBDRV_UNBUFFERED_RESULT, int))DLGetSymbolAddrEx(driver->m_handle, "DrvGetFieldLengthUnbuffered");
    driver->m_fpDrvGetField = (TCHAR* (*)(DBDRV_RESULT, int, int, TCHAR *, int))DLGetSymbolAddrEx(driver->m_handle, "DrvGetField");
    driver->m_fpDrvGetFieldUTF8 = (char* (*)(DBDRV_RESULT, int, int, char *, int))DLGetSymbolAddrEx(driver->m_handle, "DrvGetFieldUTF8", false); // optional entry point
-   driver->m_fpDrvGetFieldUnbuffered = (WCHAR* (*)(DBDRV_UNBUFFERED_RESULT, int, WCHAR *, int))DLGetSymbolAddrEx(driver->m_handle, "DrvGetFieldUnbuffered");
+   driver->m_fpDrvGetFieldUnbuffered = (TCHAR* (*)(DBDRV_UNBUFFERED_RESULT, int, TCHAR *, int))DLGetSymbolAddrEx(driver->m_handle, "DrvGetFieldUnbuffered");
    driver->m_fpDrvGetFieldUnbufferedUTF8 = (char* (*)(DBDRV_UNBUFFERED_RESULT, int, char *, int))DLGetSymbolAddrEx(driver->m_handle, "DrvGetFieldUnbufferedUTF8", false); // optional entry point
    driver->m_fpDrvGetNumRows = (int (*)(DBDRV_RESULT))DLGetSymbolAddrEx(driver->m_handle, "DrvGetNumRows");
    driver->m_fpDrvGetColumnCount = (int (*)(DBDRV_RESULT))DLGetSymbolAddrEx(driver->m_handle, "DrvGetColumnCount");
