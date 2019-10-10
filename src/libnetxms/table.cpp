@@ -462,7 +462,7 @@ void Table::createFromMessage(NXCPMessage *msg)
       }
       for(int j = 0; j < columns; j++)
       {
-         TCHAR *value = msg->getFieldAsString(dwId++);
+         TCHAR *value = msg->getFieldAsUtf8String(dwId++);
          if (m_extendedFormat)
          {
             int status = msg->getFieldAsInt16(dwId++);
