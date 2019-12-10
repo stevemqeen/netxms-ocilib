@@ -20,6 +20,7 @@
 **
 **/
 #include "ocilibdrv.h"
+#include <malloc.h>
 
 DECLARE_DRIVER_HEADER("OCILIB")
 
@@ -180,14 +181,19 @@ static void DestroyQueryResult(ORACLE_RESULT *pResult)
 	nCount = pResult->nCols * pResult->nRows;
 
 	for(i = 0; i < nCount; i++)
+	{
 		free(pResult->pData[i]);
+	}
 	free(pResult->pData);
 
 	for(i = 0; i < pResult->nCols; i++)
+	{
 		free(pResult->columnNames[i]);
+	}
 	free(pResult->columnNames);
 
 	free(pResult);
+	malloc_trim(128); // Release memory from process to OS
 }
 
 /**
@@ -911,7 +917,9 @@ static ORACLE_RESULT *ProcessQueryResults(ORACLE_CONN *pConn, OCI_Statement *han
 	bool nStatus;
 	unsigned int nWidth;
 	ORACLE_RESULT *pResult = (ORACLE_RESULT *)malloc(sizeof(ORACLE_RESULT));
-	OCI_Resultset *resultSet;
+	memset(pResult, 0, sizeof(ORACLE_RESULT));
+
+	OCI_Resultset *resultSet = NULL;
 	resultSet = OCI_GetResultset(handleStmt);
 
 	if(resultSet != NULL)
@@ -920,12 +928,11 @@ static ORACLE_RESULT *ProcessQueryResults(ORACLE_CONN *pConn, OCI_Statement *han
 		pResult->nRows = 0;
 		pResult->pData = NULL;
 		pResult->columnNames = NULL;
-		
+
 		if(pResult->nCols > 0)
 		{
 			// Get table column names
 			pResult->columnNames = (char **)calloc(pResult->nCols, sizeof(char *));
-			//pBuffers = (ORACLE_FETCH_BUFFER *)calloc(pResult->nCols, sizeof(ORACLE_FETCH_BUFFER));
 
 			for(int i = 0; i < pResult->nCols; i++)
 			{
@@ -960,7 +967,7 @@ static ORACLE_RESULT *ProcessQueryResults(ORACLE_CONN *pConn, OCI_Statement *han
 
 				// New row
 				pResult->nRows++;
-				pResult->pData = (TCHAR **)realloc(pResult->pData, sizeof(TCHAR *) * pResult->nCols * pResult->nRows);
+				pResult->pData = (TCHAR **)realloc(pResult->pData, sizeof(TCHAR *) * (pResult->nCols * pResult->nRows));
 
 				for(int i = 0; i < pResult->nCols; i++)
 				{
@@ -999,7 +1006,7 @@ static ORACLE_RESULT *ProcessQueryResults(ORACLE_CONN *pConn, OCI_Statement *han
 									strncpy(pResult->pData[nPos], result, length);
 									pResult->pData[nPos][length] = 0;
 								}
-								free(result);							
+								free(result);
 							}
 							else
 							{
@@ -1022,9 +1029,11 @@ static ORACLE_RESULT *ProcessQueryResults(ORACLE_CONN *pConn, OCI_Statement *han
 						bool emptyFlag = false;
 						
 						// If there is only end of string symbols, the result should be empty
-						if((length == 1 && _tcsicmp(OCI_GetString(resultSet, i + 1), _T("\3")) == 0) ||
+						if((length == 1 && _tcsicmp(OCI_GetString(resultSet, i + 1), "\3") == 0) ||
 						   (length == 2 && _tcsicmp(OCI_GetString(resultSet, i + 1), "\r\n") == 0))
+						{
 							pResult->pData[nPos] = (TCHAR *)nx_memdup("\0\0\0", sizeof(TCHAR));
+						}
 						else
 						{
 							pResult->pData[nPos] = (TCHAR *)malloc((length + 1) * sizeof(TCHAR));

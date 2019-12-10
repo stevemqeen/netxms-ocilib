@@ -533,8 +533,8 @@ char LIBNXDB_EXPORTABLE *DBGetFieldA(DB_RESULT hResult, int iRow, int iColumn, c
       pwszData = hResult->m_driver->m_fpDrvGetField(hResult->m_data, iRow, iColumn, pwszBuffer, nBufLen);
       if (pwszData != NULL)
       {
-         pszRet = _tcsdup(pwszData);
-         _tcscpy(pszBuffer, pszRet);
+         _tcscpy(pszBuffer, pwszData);
+         pszRet = pszBuffer;
       }
       else
       {
