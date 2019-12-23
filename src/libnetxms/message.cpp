@@ -811,138 +811,156 @@ uuid NXCPMessage::getFieldAsGUID(UINT32 fieldId) const
  */
 NXCP_MESSAGE *NXCPMessage::createMessage(bool allowCompression) const
 {
-   // Calculate message size
-   size_t size = NXCP_HEADER_SIZE;
-   UINT32 fieldCount = 0;
-   BYTE *compressedData = NULL;
-   size_t compressedDataSize = 0;
-   if (m_flags & MF_BINARY)
-   {
-      size += m_dataSize;
-      fieldCount = (UINT32)m_dataSize;
-      size += (8 - (size % 8)) & 7;
-   }
-   else
-   {
-      MessageField *entry, *tmp;
-      HASH_ITER(hh, m_fields, entry, tmp)
-      {
-         size_t fieldSize = CalculateFieldSize(&entry->data, false);
-         if (m_version >= 2)
-            size += fieldSize + ((8 - (fieldSize % 8)) & 7);
-         else
-            size += fieldSize;
-         fieldCount++;
-      }
+	// Calculate message size
+	size_t size = NXCP_HEADER_SIZE;
+	UINT32 fieldCount = 0;
+	BYTE *compressedData = NULL;
+	size_t compressedDataSize = 0;
+	if (m_flags & MF_BINARY)
+	{
+		size += m_dataSize;
+		fieldCount = (UINT32)m_dataSize;
+		size += (8 - (size % 8)) & 7;
+	}
+	else
+	{
+		MessageField *entry, *tmp;
+		HASH_ITER(hh, m_fields, entry, tmp)
+		{
+			size_t fieldSize = CalculateFieldSize(&entry->data, false);
+			if (m_version >= 2)
+			{
+				size += fieldSize + ((8 - (fieldSize % 8)) & 7);
+			}
+			else
+			{
+				size += fieldSize;
+			}
+			fieldCount++;
+		}
 
-      // Message should be aligned to 8 bytes boundary
-      // This is always the case starting from version 2 because
-      // all fields are padded to 8 bytes boundary
-      if (m_version < 2)
-         size += (8 - (size % 8)) & 7;
-   }
+		// Message should be aligned to 8 bytes boundary
+		// This is always the case starting from version 2 because
+		// all fields are padded to 8 bytes boundary
+		if (m_version < 2)
+		{
+			size += (8 - (size % 8)) & 7;
+		}
+	}
 
-   // Create message
-   NXCP_MESSAGE *msg = (NXCP_MESSAGE *)malloc(size);
-   memset(msg, 0, size);
-   msg->code = htons(m_code);
-   msg->flags = htons(m_flags);
-   msg->size = htonl((UINT32)size);
-   msg->id = htonl(m_id);
-   msg->numFields = htonl(fieldCount);
+	// Create message
+	NXCP_MESSAGE *msg = (NXCP_MESSAGE *)malloc(size);
+	memset(msg, 0, size);
+	msg->code = htons(m_code);
+	msg->flags = htons(m_flags);
+	msg->size = htonl((UINT32)size);
+	msg->id = htonl(m_id);
+	msg->numFields = htonl(fieldCount);
 
-   // Fill data fields
-   if (m_flags & MF_BINARY)
-   {
-      memcpy(msg->fields, m_data, m_dataSize);
-   }
-   else
-   {
-      NXCP_MESSAGE_FIELD *field = (NXCP_MESSAGE_FIELD *)((char *)msg + NXCP_HEADER_SIZE);
-      MessageField *entry, *tmp;
-      HASH_ITER(hh, m_fields, entry, tmp)
-      {
-         size_t fieldSize = CalculateFieldSize(&entry->data, false);
-         memcpy(field, &entry->data, fieldSize);
+	// Fill data fields
+	if (m_flags & MF_BINARY)
+	{
+		memcpy(msg->fields, m_data, m_dataSize);
+	}
+	else
+	{
+		NXCP_MESSAGE_FIELD *field = (NXCP_MESSAGE_FIELD *)((char *)msg + NXCP_HEADER_SIZE);
+		MessageField *entry, *tmp;
+		HASH_ITER(hh, m_fields, entry, tmp)
+		{
+			size_t fieldSize = CalculateFieldSize(&entry->data, false);
+			memcpy(field, &entry->data, fieldSize);
 
-         // Convert numeric values to network format
-         field->fieldId = htonl(field->fieldId);
-         switch(field->type)
-         {
-            case NXCP_DT_INT32:
-               field->df_int32 = htonl(field->df_int32);
-               break;
-            case NXCP_DT_INT64:
-               field->df_int64 = htonq(field->df_int64);
-               break;
-            case NXCP_DT_INT16:
-               field->df_int16 = htons(field->df_int16);
-               break;
-            case NXCP_DT_FLOAT:
-               field->df_real = htond(field->df_real);
-               break;
-            case NXCP_DT_STRING:
+			// Convert numeric values to network format
+			field->fieldId = htonl(field->fieldId);
+			switch(field->type)
+			{
+				case NXCP_DT_INT32:
+					field->df_int32 = htonl(field->df_int32);
+				break;
+				case NXCP_DT_INT64:
+					field->df_int64 = htonq(field->df_int64);
+				break;
+				case NXCP_DT_INT16:
+					field->df_int16 = htons(field->df_int16);
+				break;
+				case NXCP_DT_FLOAT:
+					field->df_real = htond(field->df_real);
+				break;
+				case NXCP_DT_STRING:
 #if !(WORDS_BIGENDIAN)
-               {
-                  bswap_array_16(field->df_string.value, field->df_string.length / 2);
-                  field->df_string.length = htonl(field->df_string.length);
-               }
+				{
+					bswap_array_16(field->df_string.value, field->df_string.length / 2);
+					field->df_string.length = htonl(field->df_string.length);
+				}
 #endif
-               break;
-            case NXCP_DT_BINARY:
-               field->df_string.length = htonl(field->df_string.length);
-               break;
-            case NXCP_DT_INETADDR:
-               if (field->df_inetaddr.family == NXCP_AF_INET)
-               {
-                  field->df_inetaddr.addr.v4 = htonl(field->df_inetaddr.addr.v4);
-               }
-               break;
-         }
+				break;
+				case NXCP_DT_BINARY:
+					field->df_string.length = htonl(field->df_string.length);
+				break;
+				case NXCP_DT_INETADDR:
+					if (field->df_inetaddr.family == NXCP_AF_INET)
+					{
+						field->df_inetaddr.addr.v4 = htonl(field->df_inetaddr.addr.v4);
+					}
+					break;
+			}
 
-         if (m_version >= 2)
-            field = (NXCP_MESSAGE_FIELD *)((char *)field + fieldSize + ((8 - (fieldSize % 8)) & 7));
-         else
-            field = (NXCP_MESSAGE_FIELD *)((char *)field + fieldSize);
-      }
-   }
+			if (m_version >= 2)
+			{
+				field = (NXCP_MESSAGE_FIELD *)((char *)field + fieldSize + ((8 - (fieldSize % 8)) & 7));
+			}
+			else
+			{
+				field = (NXCP_MESSAGE_FIELD *)((char *)field + fieldSize);
+			}
+		}
+	}
 
-   // Compress message payload if requested. Compression supported starting with NXCP version 4.
-   if ((m_version >= 4) && allowCompression && (size > 128) && !(m_flags & MF_STREAM))
-   {
-      z_stream stream;
-      stream.zalloc = Z_NULL;
-      stream.zfree = Z_NULL;
-      stream.opaque = Z_NULL;
-      stream.avail_in = 0;
-      stream.next_in = Z_NULL;
-      if (deflateInit(&stream, 9) == Z_OK)
-      {
-         size_t compBufferSize = deflateBound(&stream, (unsigned long)(size - NXCP_HEADER_SIZE));
-         BYTE *compressedMsg = (BYTE *)malloc(compBufferSize + NXCP_HEADER_SIZE + 4);
-         stream.next_in = (BYTE *)msg->fields;
-         stream.avail_in = (UINT32)(size - NXCP_HEADER_SIZE);
-         stream.next_out = compressedMsg + NXCP_HEADER_SIZE + 4;
-         stream.avail_out = (UINT32)compBufferSize;
-         if (deflate(&stream, Z_FINISH) == Z_STREAM_END)
-         {
-            size_t compMsgSize = compBufferSize - stream.avail_out + NXCP_HEADER_SIZE + 4;
-            // Message should be aligned to 8 bytes boundary
-            compMsgSize += (8 - (compMsgSize % 8)) & 7;
-            if (compMsgSize < size - 4)
-            {
-               memcpy(compressedMsg, msg, NXCP_HEADER_SIZE);
-               free(msg);
-               msg = (NXCP_MESSAGE *)compressedMsg;
-               msg->flags |= htons(MF_COMPRESSED);
-               memcpy((BYTE *)msg + NXCP_HEADER_SIZE, &msg->size, 4); // Save size of uncompressed message
-               msg->size = htonl((UINT32)compMsgSize);
-            }
-         }
-         deflateEnd(&stream);
-      }
-   }
-   return msg;
+	// Compress message payload if requested. Compression supported starting with NXCP version 4.
+	if ((m_version >= 4) && allowCompression && (size > 128) && !(m_flags & MF_STREAM))
+	{
+		z_stream stream;
+		stream.zalloc = Z_NULL;
+		stream.zfree = Z_NULL;
+		stream.opaque = Z_NULL;
+		stream.avail_in = 0;
+		stream.next_in = Z_NULL;
+		if (deflateInit(&stream, 9) == Z_OK)
+		{
+			size_t compBufferSize = deflateBound(&stream, (unsigned long)(size - NXCP_HEADER_SIZE));
+			BYTE *compressedMsg = (BYTE *)malloc(compBufferSize + NXCP_HEADER_SIZE + 4);
+			stream.next_in = (BYTE *)msg->fields;
+			stream.avail_in = (UINT32)(size - NXCP_HEADER_SIZE);
+			stream.next_out = compressedMsg + NXCP_HEADER_SIZE + 4;
+			stream.avail_out = (UINT32)compBufferSize;
+			if (deflate(&stream, Z_FINISH) == Z_STREAM_END)
+			{
+				size_t compMsgSize = compBufferSize - stream.avail_out + NXCP_HEADER_SIZE + 4;
+				// Message should be aligned to 8 bytes boundary
+				compMsgSize += (8 - (compMsgSize % 8)) & 7;
+				if (compMsgSize < size - 4)
+				{
+					memcpy(compressedMsg, msg, NXCP_HEADER_SIZE);
+					free(msg);
+					msg = (NXCP_MESSAGE *)compressedMsg;
+					msg->flags |= htons(MF_COMPRESSED);
+					memcpy((BYTE *)msg + NXCP_HEADER_SIZE, &msg->size, 4); // Save size of uncompressed message
+					msg->size = htonl((UINT32)compMsgSize);
+				}
+				else
+				{
+					safe_free(compressedMsg);
+				}
+			}
+			else
+			{
+				safe_free(compressedMsg);
+			}
+			deflateEnd(&stream);
+		}
+	}
+	return msg;
 }
 
 /**

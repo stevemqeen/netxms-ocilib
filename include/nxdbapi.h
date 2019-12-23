@@ -67,6 +67,14 @@
 #define DB_SYNTAX_UNKNOWN	-1
 
 /**
+ * Ocilib defines
+ */
+#define OCI_SFM_DEFAULT    0
+#define OCI_SFM_SCROLLABLE 0x08
+#define OCI_SFD_ABSOLUTE   0x20
+#define OCI_SFD_RELATIVE   0x40
+
+/**
  * Database connection structures
  */
 struct db_driver_t;
@@ -178,10 +186,12 @@ bool LIBNXDB_EXPORTABLE DBGetFieldByteArray2(DB_RESULT hResult, int iRow, int iC
                                              BYTE *data, int nSize, int nDefault);
 uuid LIBNXDB_EXPORTABLE DBGetFieldGUID(DB_RESULT hResult, int iRow, int iColumn);
 
-DB_UNBUFFERED_RESULT LIBNXDB_EXPORTABLE DBSelectUnbuffered(DB_HANDLE hConn, const TCHAR *szQuery);
-DB_UNBUFFERED_RESULT LIBNXDB_EXPORTABLE DBSelectUnbufferedEx(DB_HANDLE hConn, const TCHAR *szQuery, TCHAR *errorText);
+DB_UNBUFFERED_RESULT LIBNXDB_EXPORTABLE DBSelectUnbuffered(DB_HANDLE hConn, const TCHAR *szQuery, UINT32 mode = OCI_SFM_DEFAULT, bool unlockOnResult = false);
+DB_UNBUFFERED_RESULT LIBNXDB_EXPORTABLE DBSelectUnbufferedEx(DB_HANDLE hConn, const TCHAR *szQuery, TCHAR *errorText, UINT32 mode = OCI_SFM_DEFAULT, bool unlockOnResult = false);
 void LIBNXDB_EXPORTABLE DBFetchFreeResult(DB_UNBUFFERED_RESULT hResult);
 bool LIBNXDB_EXPORTABLE DBFetch(DB_UNBUFFERED_RESULT hResult);
+bool LIBNXDB_EXPORTABLE DBSetFetchMode(DB_UNBUFFERED_RESULT hResult, UINT32 mode);
+bool LIBNXDB_EXPORTABLE DBFetchSeek(DB_UNBUFFERED_RESULT hResult, UINT32 mode, int offset);
 int LIBNXDB_EXPORTABLE DBGetColumnCount(DB_UNBUFFERED_RESULT hResult);
 bool LIBNXDB_EXPORTABLE DBGetColumnName(DB_UNBUFFERED_RESULT hResult, int column, TCHAR *buffer, int bufSize);
 void LIBNXDB_EXPORTABLE DBFreeResult(DB_UNBUFFERED_RESULT hResult);

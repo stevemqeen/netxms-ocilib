@@ -58,10 +58,12 @@ struct db_driver_t
 	DWORD (* m_fpDrvExecute)(DBDRV_CONNECTION, DBDRV_STATEMENT, TCHAR *);
 	DWORD (* m_fpDrvQuery)(DBDRV_CONNECTION, const TCHAR *, TCHAR *);
 	DBDRV_RESULT (* m_fpDrvSelect)(DBDRV_CONNECTION, const TCHAR *, DWORD *, TCHAR *);
-	DBDRV_UNBUFFERED_RESULT (* m_fpDrvSelectUnbuffered)(DBDRV_CONNECTION, const TCHAR *, DWORD *, TCHAR *);
+	DBDRV_UNBUFFERED_RESULT (* m_fpDrvSelectUnbuffered)(DBDRV_CONNECTION, const TCHAR *, DWORD *, TCHAR *, UINT32);
 	DBDRV_RESULT (* m_fpDrvSelectPrepared)(DBDRV_CONNECTION, DBDRV_STATEMENT, DWORD *, TCHAR *);
    DBDRV_UNBUFFERED_RESULT (* m_fpDrvSelectPreparedUnbuffered)(DBDRV_CONNECTION, DBDRV_STATEMENT, DWORD *, TCHAR *);
 	bool (* m_fpDrvFetch)(DBDRV_UNBUFFERED_RESULT);
+	bool (* m_fpDrvSetFetchMode)(DBDRV_UNBUFFERED_RESULT, UINT32);
+	bool (* m_fpDrvFetchSeek)(DBDRV_UNBUFFERED_RESULT, UINT32, int);
 	LONG (* m_fpDrvGetFieldLength)(DBDRV_RESULT, int, int);
 	LONG (* m_fpDrvGetFieldLengthUnbuffered)(DBDRV_UNBUFFERED_RESULT, int);
 	TCHAR* (* m_fpDrvGetField)(DBDRV_RESULT, int, int, TCHAR *, int);

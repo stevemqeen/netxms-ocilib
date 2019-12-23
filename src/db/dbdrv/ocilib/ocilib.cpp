@@ -1006,7 +1006,11 @@ static ORACLE_RESULT *ProcessQueryResults(ORACLE_CONN *pConn, OCI_Statement *han
 									strncpy(pResult->pData[nPos], result, length);
 									pResult->pData[nPos][length] = 0;
 								}
-								free(result);
+
+								if (NULL != result)
+								{
+									free(result);
+								}
 							}
 							else
 							{
@@ -1030,7 +1034,7 @@ static ORACLE_RESULT *ProcessQueryResults(ORACLE_CONN *pConn, OCI_Statement *han
 						
 						// If there is only end of string symbols, the result should be empty
 						if((length == 1 && _tcsicmp(OCI_GetString(resultSet, i + 1), "\3") == 0) ||
-						   (length == 2 && _tcsicmp(OCI_GetString(resultSet, i + 1), "\r\n") == 0))
+							(length == 2 && _tcsicmp(OCI_GetString(resultSet, i + 1), "\r\n") == 0))
 						{
 							pResult->pData[nPos] = (TCHAR *)nx_memdup("\0\0\0", sizeof(TCHAR));
 						}
@@ -1231,14 +1235,16 @@ static void DestroyUnbufferedQueryResult(ORACLE_UNBUFFERED_RESULT *result, bool 
 extern "C" void EXPORT DrvFetchFreeResult(ORACLE_UNBUFFERED_RESULT *result)
 {
 	if(result == NULL)
+	{
 		return;
+	}
 
 	for(int i = 0; i < result->nCols; i++)
 	{
-		free(result->pBuffers[i].pData);
+		safe_free(result->pBuffers[i].pData);
 		if (result->pBuffers[i].lobLocator != NULL) // this maybe not needed anymore
 		{
-			free(result->pBuffers[i].lobLocator);
+			safe_free(result->pBuffers[i].lobLocator);
 		}
 	}
 }
@@ -1290,19 +1296,34 @@ static ORACLE_UNBUFFERED_RESULT *ProcessUnbufferedQueryResults(ORACLE_CONN *pCon
 /**
  * Perform unbuffered SELECT query
  */
-extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectUnbuffered(ORACLE_CONN *pConn, TCHAR *pwszQuery, DWORD *pdwError, TCHAR *errorText)
+extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectUnbuffered(ORACLE_CONN *pConn, TCHAR *pwszQuery, DWORD *pdwError, TCHAR *errorText, UINT32 mode)
 {
 	ORACLE_UNBUFFERED_RESULT *result = NULL;
 
 	MutexLock(pConn->mutexQueryLock);
 
-	OCI_SetStatementCacheSize(pConn->handleConnection, pConn->prefetchLimit);
+	OCI_SetStatementCacheSize(pConn->handleConnection, 0);
 	OCI_Statement *handleStmt = OCI_StatementCreate(pConn->handleConnection);
+
+	if (OCI_SFM_SCROLLABLE == mode)
+	{
+		if (!OCI_SetFetchMode(handleStmt, mode))
+		{
+			SetLastError(pConn);
+			*pdwError = IsConnectionError(pConn);
+		}
+
+		if(!OCI_SetFetchSize(handleStmt, 1))
+		{
+			SetLastError(pConn);
+			*pdwError = IsConnectionError(pConn);
+		}
+	}
 
 	if(OCI_Prepare(handleStmt, (otext *)pwszQuery) == true)
 	{	
-		OCI_SetPrefetchMemory(handleStmt, pConn->prefetchLimit);
-		OCI_SetPrefetchSize(handleStmt, pConn->prefetchLimit);
+		OCI_SetPrefetchMemory(handleStmt, 0);
+		OCI_SetPrefetchSize(handleStmt, 0);
 
 		if(OCI_Execute(handleStmt) == true)
 		{
@@ -1342,9 +1363,9 @@ extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectPreparedUnbuffered(ORACLE_CON
 
 	MutexLock(pConn->mutexQueryLock);
 
-	OCI_SetPrefetchMemory(stmt->handleStmt, pConn->prefetchLimit);
-	OCI_SetPrefetchSize(stmt->handleStmt, pConn->prefetchLimit);
-	OCI_SetStatementCacheSize(pConn->handleConnection, pConn->prefetchLimit);
+	OCI_SetPrefetchMemory(stmt->handleStmt, 0);
+	OCI_SetPrefetchSize(stmt->handleStmt, 0);
+	OCI_SetStatementCacheSize(pConn->handleConnection, 0);
 
 	if(OCI_Execute(stmt->handleStmt) == true)
 	{
@@ -1369,6 +1390,46 @@ extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectPreparedUnbuffered(ORACLE_CON
 }
 
 /**
+ * Custom Fetch for result set
+ * Modes :
+ *  OCI_SFD_ABSOLUTE
+ *  OCI_SFD_RELATIVE
+ */
+extern "C" bool EXPORT DrvFetchSeek(ORACLE_UNBUFFERED_RESULT *result, UINT32 mode, int offset)
+{
+	bool success = false;
+
+	if (result == NULL)
+	{
+		return success;
+	}
+
+	if (OCI_GetFetchMode(result->handleStmt) == OCI_SFM_SCROLLABLE)
+	{
+		success = OCI_SetFetchSize(result->handleStmt, 1); // Note: You must set the fetching size to 1
+
+		if (!success)
+		{
+			SetLastError(result->connection);
+			return success;
+		}
+	}
+
+	OCI_Resultset *resultSet = OCI_GetResultset(result->handleStmt);
+
+	if (OCI_FetchSeek(resultSet, mode, offset))
+	{
+		success = true;
+	}
+	else
+	{
+		SetLastError(result->connection);
+	}
+
+	return success;
+}
+
+/**
  * Fetch next result line from unbuffered SELECT results
  */
 extern "C" bool EXPORT DrvFetch(ORACLE_UNBUFFERED_RESULT *result)
@@ -1376,7 +1437,9 @@ extern "C" bool EXPORT DrvFetch(ORACLE_UNBUFFERED_RESULT *result)
 	bool success;
 
 	if(result == NULL)
+	{
 		return false;
+	}
 
 	OCI_Resultset *resultSet = OCI_GetResultset(result->handleStmt);
 
@@ -1442,7 +1505,8 @@ extern "C" bool EXPORT DrvFetch(ORACLE_UNBUFFERED_RESULT *result)
 				bool emptyFlag = false;
 
 				// If there is only end of string symbols, the result should be empty
-				if (length == 2 && _tcsicmp(OCI_GetString(resultSet, i + 1), "\r\n") == 0)
+				if((length == 1 && _tcsicmp(OCI_GetString(resultSet, i + 1), "\3") == 0) ||
+					(length == 2 && _tcsicmp(OCI_GetString(resultSet, i + 1), "\r\n") == 0))
 				{
 					result->pBuffers[i].pData = (TCHAR *)nx_memdup("\0\0\0", sizeof(TCHAR));
 				}
