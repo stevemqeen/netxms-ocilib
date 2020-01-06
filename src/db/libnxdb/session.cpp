@@ -778,44 +778,58 @@ void LIBNXDB_EXPORTABLE DBFreeResult(DB_RESULT hResult)
  */
 DB_UNBUFFERED_RESULT LIBNXDB_EXPORTABLE DBSelectUnbufferedEx(DB_HANDLE hConn, const TCHAR *szQuery, TCHAR *errorText, UINT32 mode, bool unlockOnResult)
 {
-   DBDRV_UNBUFFERED_RESULT hResult;
+	DBDRV_UNBUFFERED_RESULT hResult;
 	DB_UNBUFFERED_RESULT result = NULL;
-   DWORD dwError = DBERR_OTHER_ERROR;
-   
-   MutexLock(hConn->m_mutexTransLock);
-   INT64 ms = GetCurrentTimeMs();
+	DWORD dwError = DBERR_OTHER_ERROR;
 
-   s_perfSelectQueries++;
-   s_perfTotalQueries++;
+	MutexLock(hConn->m_mutexTransLock);
+	INT64 ms = GetCurrentTimeMs();
 
-   hResult = hConn->m_driver->m_fpDrvSelectUnbuffered(hConn->m_connection, szQuery, &dwError, errorText, mode);
-   if ((hResult == NULL) && (dwError == DBERR_CONNECTION_LOST) && hConn->m_reconnectEnabled)
-   {
-      if (DBReconnect(hConn))
-         hResult = hConn->m_driver->m_fpDrvSelectUnbuffered(hConn->m_connection, szQuery, &dwError, errorText, mode);
-   }
+	s_perfSelectQueries++;
+	s_perfTotalQueries++;
 
-   ms = GetCurrentTimeMs() - ms;
-   if (hConn->m_driver->m_dumpSql)
-   {
-      nxlog_debug(9, _T("%s unbuffered query: \"%s\" [%d ms]"), (hResult != NULL) ? _T("Successful") : _T("Failed"), szQuery, (int)ms);
-   }
-   if ((hResult != NULL) && ((UINT32)ms > g_sqlQueryExecTimeThreshold))
-   {
-      nxlog_debug(3, _T("Long running query: \"%s\" [%d ms]"), szQuery, (int)ms);
-      s_perfLongRunningQueries++;
-   }
-   if (hResult == NULL)
-   {
-      s_perfFailedQueries++;
-      MutexUnlock(hConn->m_mutexTransLock);
+	hResult = hConn->m_driver->m_fpDrvSelectUnbuffered(hConn->m_connection, szQuery, &dwError, errorText, mode);
+	if ((hResult == NULL) && (dwError == DBERR_CONNECTION_LOST) && hConn->m_reconnectEnabled)
+	{
+		if (DBReconnect(hConn))
+		{
+			hResult = hConn->m_driver->m_fpDrvSelectUnbuffered(hConn->m_connection, szQuery, &dwError, errorText, mode);
+		}
+	}
+
+	ms = GetCurrentTimeMs() - ms;
+	if (hConn->m_driver->m_dumpSql)
+	{
+		nxlog_debug(9, _T("%s unbuffered query: \"%s\" [%d ms]"), (hResult != NULL) ? _T("Successful") : _T("Failed"), szQuery, (int)ms);
+	}
+	
+	if ((hResult != NULL) && ((UINT32)ms > g_sqlQueryExecTimeThreshold))
+	{
+		nxlog_debug(3, _T("Long running query: \"%s\" [%d ms]"), szQuery, (int)ms);
+		s_perfLongRunningQueries++;
+	}
+
+	if (hResult == NULL)
+	{
+		s_perfFailedQueries++;
+
+		// Unlock result only if unlock flag is set to false
+		if (!unlockOnResult)
+		{
+			MutexUnlock(hConn->m_mutexTransLock);
+		}
 
 		if (hConn->m_driver->m_logSqlErrors)
-        nxlog_write(g_sqlErrorMsgCode, EVENTLOG_ERROR_TYPE, "ss", szQuery, errorText);
+		{
+			nxlog_write(g_sqlErrorMsgCode, EVENTLOG_ERROR_TYPE, "ss", szQuery, errorText);
+		}
+
 		if (hConn->m_driver->m_fpEventHandler != NULL)
+		{
 			hConn->m_driver->m_fpEventHandler(DBEVENT_QUERY_FAILED, szQuery, errorText, dwError == DBERR_CONNECTION_LOST, hConn->m_driver->m_userArg);
-   }
-   
+		}
+	}
+
 	if (hResult != NULL)
 	{
 		result = (DB_UNBUFFERED_RESULT)malloc(sizeof(db_unbuffered_result_t));
@@ -824,12 +838,13 @@ DB_UNBUFFERED_RESULT LIBNXDB_EXPORTABLE DBSelectUnbufferedEx(DB_HANDLE hConn, co
 		result->m_data = hResult;
 	}
 
+	// Unlock mutex lock
 	if (unlockOnResult)
 	{
 		MutexUnlock(hConn->m_mutexTransLock);
 	}
 
-   return result;
+	return result;
 }
 
 DB_UNBUFFERED_RESULT LIBNXDB_EXPORTABLE DBSelectUnbuffered(DB_HANDLE hConn, const TCHAR *query, UINT32 mode, bool unlockOnResult)
