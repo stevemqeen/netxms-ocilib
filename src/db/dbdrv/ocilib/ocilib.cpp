@@ -22,6 +22,8 @@
 #include "ocilibdrv.h"
 #include <malloc.h>
 
+#define DRV_UTF8_BYTES_PER_CHAR 4
+
 DECLARE_DRIVER_HEADER("OCILIB")
 
 static DWORD DrvQueryInternal(ORACLE_CONN *pConn, const TCHAR *pwszQuery, TCHAR *errorText);
@@ -998,18 +1000,19 @@ static ORACLE_RESULT *ProcessQueryResults(ORACLE_CONN *pConn, OCI_Statement *han
 							if(length > 0)
 							{
 								int max_chars = length, max_bytes = 0;
-								TCHAR *result = (TCHAR *)malloc((length + 1) * sizeof(TCHAR));
-								pResult->pData[nPos] = (TCHAR *)malloc((length + 1) * sizeof(TCHAR));
+								TCHAR *result = (TCHAR *)malloc((length + 1) * DRV_UTF8_BYTES_PER_CHAR);
+								pResult->pData[nPos] = (TCHAR *)malloc((length + 1) * DRV_UTF8_BYTES_PER_CHAR);
 
 								if(OCI_LobRead2(lob, (TCHAR*)result, (unsigned int*)&max_chars, (unsigned int*)&max_bytes))
 								{
+									length = _tcslen(result);
 									strncpy(pResult->pData[nPos], result, length);
 									pResult->pData[nPos][length] = 0;
 								}
 
 								if (NULL != result)
 								{
-									free(result);
+									safe_free(result);
 								}
 							}
 							else
@@ -1468,15 +1471,16 @@ extern "C" bool EXPORT DrvFetch(ORACLE_UNBUFFERED_RESULT *result)
 					if (length > 0)
 					{
 						int max_chars = length, max_bytes = 0;
-						TCHAR *resultString = (TCHAR*)malloc((length + 1) * sizeof(TCHAR));
-						result->pBuffers[i].pData = (TCHAR*)malloc((length + 1) * sizeof(TCHAR));
+						TCHAR *resultString = (TCHAR*)malloc((length + 1) * DRV_UTF8_BYTES_PER_CHAR);
+						result->pBuffers[i].pData = (TCHAR*)malloc((length + 1) * DRV_UTF8_BYTES_PER_CHAR);
 
 						if (OCI_LobRead2(lob, (TCHAR*)resultString, (unsigned int*)&max_chars, (unsigned int*)&max_bytes))
 						{
+							length = _tcslen(resultString);
 							_tcsncpy(result->pBuffers[i].pData, resultString, length);
 							result->pBuffers[i].pData[length] = 0;
 							result->pBuffers[i].isNull = 0;
-							result->pBuffers[i].nLength = max_chars * sizeof(TCHAR);
+							result->pBuffers[i].nLength = length * sizeof(TCHAR);
 						}
 
 						free(resultString);
