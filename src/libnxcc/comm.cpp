@@ -422,9 +422,19 @@ static THREAD_RESULT THREAD_CALL ClusterKeepaliveThread(void *arg)
 void ClusterSendMessage(ClusterNodeInfo *node, NXCPMessage *msg)
 {
    TCHAR buffer[64];
-   ClusterDebug(7, _T("ClusterSendMessage: sending message %s (%d) to peer %d [%s]"),
-                NXCPMessageCodeName(msg->getCode(), buffer), msg->getId(),
-                node->m_id, (const TCHAR *)node->m_addr->toString());
+
+   if (node->m_addr != NULL)
+   {
+      ClusterDebug(7, _T("ClusterSendMessage: sending message %s (%d) to peer %d [%s]"),
+         NXCPMessageCodeName(msg->getCode(), buffer), msg->getId(),
+         node->m_id, (const TCHAR *)node->m_addr->toString());
+   }
+   else
+   {
+      ClusterDebug(7, _T("ClusterSendMessage: sending message %s (%d) to peer %d"),
+         NXCPMessageCodeName(msg->getCode(), buffer), msg->getId(),
+         node->m_id);
+   }
 
    NXCP_MESSAGE *rawMsg = msg->createMessage();
    MutexLock(node->m_mutex);
@@ -440,7 +450,14 @@ void ClusterSendMessage(ClusterNodeInfo *node, NXCPMessage *msg)
    }
    else
    {
-      ClusterDebug(5, _T("ClusterSendMessage: send failed for peer %d [%s]"), node->m_id, (const TCHAR *)node->m_addr->toString());
+      if (node->m_addr != NULL)
+      {
+         ClusterDebug(5, _T("ClusterSendMessage: send failed for peer %d [%s]"), node->m_id, (const TCHAR *)node->m_addr->toString());
+      }
+      else
+      {
+         ClusterDebug(5, _T("ClusterSendMessage: send failed to peer %d [<NULL>]"), node->m_id);
+      }
    }
    MutexUnlock(node->m_mutex);
    free(rawMsg);
