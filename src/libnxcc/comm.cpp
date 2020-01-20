@@ -223,7 +223,7 @@ void ChangeClusterNodeState(ClusterNodeInfo *node, ClusterNodeState state)
 {
    static const TCHAR *stateNames[] = { _T("DOWN"), _T("CONNECTED"), _T("SYNC"), _T("UP") };
 
-   if (node->m_state == state)
+   if ((state != CLUSTER_NODE_DOWN) && (node->m_state == state))
       return;
 
    node->m_state = state;
@@ -332,6 +332,7 @@ static THREAD_RESULT THREAD_CALL ClusterListenerThread(void *arg)
 static THREAD_RESULT THREAD_CALL ClusterConnectorThread(void *arg)
 {
    ClusterDebug(1, _T("Cluster connector thread started"));
+   int j = 0;
 
    while(!g_nxccShutdown)
    {
@@ -361,6 +362,24 @@ static THREAD_RESULT THREAD_CALL ClusterConnectorThread(void *arg)
                   ClusterDebug(5, _T("Cluster connection established with peer %d [%s] but discarded because connection already present"),
                      g_nxccNodes[i].m_id, (const TCHAR *)g_nxccNodes[i].m_addr->toString());
                   closesocket(s);
+               }
+            } else {
+               /* 
+                * Each 5 seconds check if this node who has invalid socket
+                * have state equals DOWN and is master.
+                * If so then try promote new master.
+                */
+               if (g_nxccNodes[i].m_id != 0)
+               {
+                  if(10 == j)
+                  {
+                     j = 0;
+                     if ((g_nxccNodes[i].m_state == CLUSTER_NODE_DOWN) && g_nxccNodes[i].m_master)
+                     {
+                        ChangeClusterNodeState(&g_nxccNodes[i], CLUSTER_NODE_DOWN);
+                     }
+                  }
+                  j++;
                }
             }
          }
@@ -881,7 +900,7 @@ bool ClusterGetNodeStateFromDB(ClusterNodeInfo *node)
          if (_tcscmp(_T("#00"), lockinfo) || _tcscmp(_T("0"), lockpid) || _tcscmp(_T("UNLOCKED"), lockstatus))
          {
             // if lock time is not updated more than 60 seconds, seems that server is not running
-            if (locktime > 0 && locktime - time(NULL) < 60)
+            if (locktime > 0 && time(NULL) - locktime < 60)
             {
                result = true;
             }

@@ -49,7 +49,7 @@
  */
 struct ORACLE_FETCH_BUFFER
 {
-	UCS2CHAR *pData;
+	WCHAR *pData;
    OCILobLocator *lobLocator;
 	ub2 nLength;
 	ub2 nCode;
