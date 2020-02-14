@@ -43,7 +43,7 @@ struct db_driver_t
 	bool m_logSqlErrors;
 	bool m_dumpSql;
 	int m_reconnect;
-   int m_defaultPrefetchLimit;
+	int m_defaultPrefetchLimit;
 	MUTEX m_mutexReconnect;
 	HMODULE m_handle;
 	void *m_userArg;
@@ -60,7 +60,7 @@ struct db_driver_t
 	DBDRV_RESULT (* m_fpDrvSelect)(DBDRV_CONNECTION, const TCHAR *, DWORD *, TCHAR *);
 	DBDRV_UNBUFFERED_RESULT (* m_fpDrvSelectUnbuffered)(DBDRV_CONNECTION, const TCHAR *, DWORD *, TCHAR *, UINT32);
 	DBDRV_RESULT (* m_fpDrvSelectPrepared)(DBDRV_CONNECTION, DBDRV_STATEMENT, DWORD *, TCHAR *);
-   DBDRV_UNBUFFERED_RESULT (* m_fpDrvSelectPreparedUnbuffered)(DBDRV_CONNECTION, DBDRV_STATEMENT, DWORD *, TCHAR *);
+	DBDRV_UNBUFFERED_RESULT (* m_fpDrvSelectPreparedUnbuffered)(DBDRV_CONNECTION, DBDRV_STATEMENT, DWORD *, TCHAR *);
 	bool (* m_fpDrvFetch)(DBDRV_UNBUFFERED_RESULT);
 	bool (* m_fpDrvSetFetchMode)(DBDRV_UNBUFFERED_RESULT, UINT32);
 	bool (* m_fpDrvFetchSeek)(DBDRV_UNBUFFERED_RESULT, UINT32, int);
@@ -69,7 +69,7 @@ struct db_driver_t
 	TCHAR* (* m_fpDrvGetField)(DBDRV_RESULT, int, int, TCHAR *, int);
 	char* (* m_fpDrvGetFieldUTF8)(DBDRV_RESULT, int, int, char *, int);
 	TCHAR* (* m_fpDrvGetFieldUnbuffered)(DBDRV_UNBUFFERED_RESULT, int, TCHAR *, int);
-   char* (* m_fpDrvGetFieldUnbufferedUTF8)(DBDRV_UNBUFFERED_RESULT, int, char *, int);
+	char* (* m_fpDrvGetFieldUnbufferedUTF8)(DBDRV_UNBUFFERED_RESULT, int, char *, int);
 	int (* m_fpDrvGetNumRows)(DBDRV_RESULT);
 	void (* m_fpDrvFreeResult)(DBDRV_RESULT);
 	void (* m_fpDrvFreeUnbufferedResult)(DBDRV_UNBUFFERED_RESULT);
@@ -104,18 +104,18 @@ struct db_statement_t
  */
 struct db_handle_t
 {
-   DBDRV_CONNECTION m_connection;
+	DBDRV_CONNECTION m_connection;
 	DB_DRIVER m_driver;
 	bool m_dumpSql;
 	bool m_reconnectEnabled;
-   MUTEX m_mutexTransLock;      // Transaction lock
-   int m_transactionLevel;
-   char *m_server;
-   char *m_login;
-   char *m_password;
-   char *m_dbName;
-   char *m_schema;
-   ObjectArray<db_statement_t> *m_preparedStatements;
+	MUTEX m_mutexTransLock;	// Transaction lock
+	int m_transactionLevel;
+	char *m_server;
+	char *m_login;
+	char *m_password;
+	char *m_dbName;
+	char *m_schema;
+	ObjectArray<db_statement_t> *m_preparedStatements;
 };
 
 /**
@@ -151,4 +151,4 @@ extern UINT32 g_sqlErrorMsgCode;
 extern UINT32 g_sqlQueryExecTimeThreshold;
 extern BOOL g_isReconnectAborted;
 
-#endif   /* _libnxsrv_h_ */
+#endif	/* _libnxsrv_h_ */

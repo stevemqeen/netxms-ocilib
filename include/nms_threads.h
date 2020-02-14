@@ -27,6 +27,11 @@
 
 #define NMS_THREADS_H_INCLUDED
 
+#include <sys/resource.h>
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
+
 #if defined(_WIN32)
 
 #ifndef UNDER_CE
@@ -638,14 +643,28 @@ inline void ThreadSleepMs(UINT32 dwMilliseconds)
 
 inline THREAD ThreadCreateEx(ThreadFunction start_address, int stack_size, void *args)
 {
-   THREAD id;
+	THREAD id;
 
 	if (stack_size <= 0)
 	{
-		// TODO: Find out minimal stack size
-		stack_size = 1024 * 1024; // 1MB
-		// set stack size to 1mb (it's windows default - and application works,
-		// we need to investigate more on this)
+		struct rlimit limit;
+		
+		if (0 != getrlimit(RLIMIT_STACK, &limit))
+		{
+			printf("Failed to get stack size: %s\n", strerror(errno));
+			stack_size = 1024 * 1024; // 1MB
+			// set stack size to 1mb (it's windows default - and application works,
+			// we need to investigate more on this)
+		}
+		else
+		{
+			stack_size = limit.rlim_cur;
+
+			if (stack_size < 0)
+			{
+				stack_size = (30 * 16777216); // NDRX_STACK_MAX (7.0.16)
+			}
+		}
 	}
 	pthread_attr_t attr;
 	pthread_attr_init(&attr);

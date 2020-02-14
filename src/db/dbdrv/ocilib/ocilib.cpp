@@ -116,14 +116,20 @@ extern "C" char EXPORT *DrvPrepareStringA(const char *str)
 extern "C" bool EXPORT DrvInit(const char *cmdLine)
 {
 	if(OCI_Initialize(NULL, NULL, OCI_THREADED | OCI_NCHAR_LITERAL_REPLACE_OFF | OCI_ENV_CONTEXT) != true)
+	{
 		return false;
+	}
 	else
+	{
 		s_handleEnv = (OCIEnv*)OCI_HandleGetEnvironment();
+	}
 
 	nxlog_debug(0, _T("OCILIB: version %d.%d.%d, charset : %s"), OCILIB_MAJOR_VERSION, OCILIB_MINOR_VERSION, OCILIB_REVISION_VERSION, (OCI_GetCharset() == OCI_CHAR_ANSI) ? _T("ANSI") : _T("UNICODE"));
 
 	if(s_handleEnv == NULL)
+	{
 		return false;
+	}
 
 	OCI_EnableWarnings(TRUE);
 
@@ -136,7 +142,9 @@ extern "C" bool EXPORT DrvInit(const char *cmdLine)
 extern "C" void EXPORT DrvUnload()
 {
 	if(s_handleEnv != NULL)
+	{
 		OCI_Cleanup();
+	}
 }
 
 /**
