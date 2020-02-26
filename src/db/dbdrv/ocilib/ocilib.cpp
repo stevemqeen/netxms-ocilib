@@ -677,10 +677,10 @@ static void BindBatch(ORACLE_STATEMENT *stmt, int pos, int sqlType, int cType, v
 	switch(bind->getCType())
 	{
 		case DB_CTYPE_STRING:
-			{			
+			{
 #if UNICODE_UCS4
 			if(_tcslen((TCHAR *)buffer) == 0)
-				sqlBuffer = _tcsdup("\3"); // set the end of text symbol
+				sqlBuffer = _tcsdup("\3\0\0"); // set the end of text symbol
 			else
 				sqlBuffer = _tcsdup((TCHAR *)buffer);
 
@@ -1044,8 +1044,8 @@ static ORACLE_RESULT *ProcessQueryResults(ORACLE_CONN *pConn, OCI_Statement *han
 						bool emptyFlag = false;
 						
 						// If there is only end of string symbols, the result should be empty
-						if((length == 1 && _tcsicmp(OCI_GetString(resultSet, i + 1), "\3") == 0) ||
-							(length == 2 && _tcsicmp(OCI_GetString(resultSet, i + 1), "\r\n") == 0))
+						if((length >= 1 && _tcsnicmp(OCI_GetString(resultSet, i + 1), "\3", 1) == 0) ||
+							(length >= 2 && _tcsnicmp(OCI_GetString(resultSet, i + 1), "\r\n", 2) == 0))
 						{
 							pResult->pData[nPos] = (TCHAR *)nx_memdup("\0\0\0", sizeof(TCHAR));
 						}
@@ -1517,8 +1517,8 @@ extern "C" bool EXPORT DrvFetch(ORACLE_UNBUFFERED_RESULT *result)
 				bool emptyFlag = false;
 
 				// If there is only end of string symbols, the result should be empty
-				if((length == 1 && _tcsicmp(OCI_GetString(resultSet, i + 1), "\3") == 0) ||
-					(length == 2 && _tcsicmp(OCI_GetString(resultSet, i + 1), "\r\n") == 0))
+				if((length >= 1 && _tcsnicmp(OCI_GetString(resultSet, i + 1), "\3", 1) == 0) ||
+					(length >= 2 && _tcsnicmp(OCI_GetString(resultSet, i + 1), "\r\n", 2) == 0))
 				{
 					result->pBuffers[i].pData = (TCHAR *)nx_memdup("\0\0\0", sizeof(TCHAR));
 				}
