@@ -355,7 +355,7 @@ extern "C" ORACLE_STATEMENT EXPORT *DrvPrepare(ORACLE_CONN *pConn, TCHAR *szQuer
 	OCI_AllowRebinding(handleStmt, true);
 
 	if(OCI_Prepare(handleStmt, query) == true)
-	{	
+	{
 		stmt = (ORACLE_STATEMENT*)malloc(sizeof(ORACLE_STATEMENT));
 		stmt->connection = pConn;
 		stmt->handleStmt = handleStmt;
@@ -769,7 +769,7 @@ extern "C" DWORD EXPORT DrvExecute(ORACLE_CONN *pConn, ORACLE_STATEMENT *stmt, T
 		{
 			stmt->batchMode = false;
 			stmt->batchBindings->clear();
-			return DBERR_SUCCESS;   // empty batch
+			return DBERR_SUCCESS; // empty batch
 		}
 
 		OCI_BindArraySetSize(stmt->handleStmt, stmt->batchSize);
@@ -778,10 +778,12 @@ extern "C" DWORD EXPORT DrvExecute(ORACLE_CONN *pConn, ORACLE_STATEMENT *stmt, T
 		{
 			OracleBatchBind *b = stmt->batchBindings->get(i);
 			if (b == NULL)
+			{
 				continue;
+			}
 
-			TCHAR bindPos[8]={0};
-			snprintf(bindPos, 8, ":%d", i+1);
+			TCHAR bindPos[8] = { 0 };
+			snprintf(bindPos, 8, ":%d", i + 1);
 
 			switch(b->getOraType())
 			{
