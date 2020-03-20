@@ -333,6 +333,8 @@ public:
    NXCPMessage *readMessage(UINT32 timeout, MessageReceiverResult *result);
    NXCP_MESSAGE *getRawMessageBuffer() { return (NXCP_MESSAGE *)m_buffer; }
 
+   NXCPEncryptionContext *getEncryptionContext() { return m_encryptionContext; }
+
    static const TCHAR *resultToText(MessageReceiverResult result);
 };
 
