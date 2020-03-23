@@ -385,10 +385,10 @@ AC_ARG_WITH(ocilib,
 	fi
 	if test "x$ORABASE" != "x"; then
 		if test -x "$ORABASE/lib"; then
-			OCILIB_LD_RUN_PATH="${OCILIB_LD_RUN_PATH}${ORABASE}/lib"
+			OCILIB_LD_RUN_PATH="${OCILIB_LD_RUN_PATH}:${ORABASE}/lib"
 			OCILIB_LDFLAGS="${OCILIB_LDFLAGS} -L${ORABASE}/lib"
 		else
-			OCILIB_LD_RUN_PATH="${OCILIB_LD_RUN_PATH}${ORABASE}"
+			OCILIB_LD_RUN_PATH="${OCILIB_LD_RUN_PATH}:${ORABASE}"
 			OCILIB_LDFLAGS="${OCILIB_LDFLAGS} -L${ORABASE}"
 		fi
 		if test -x "$ORABASE/include" ; then
