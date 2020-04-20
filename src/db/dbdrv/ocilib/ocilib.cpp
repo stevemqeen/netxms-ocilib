@@ -162,7 +162,9 @@ static void GetErrorFromHandle(sb4 *errorCode, TCHAR *errorText)
 	errorText[DBDRV_MAX_ERROR_TEXT - 1] = 0;
 #else
 	if(handle != NULL)
+	{
 		strncpy(errorText, OCI_ErrorGetString(handle), DBDRV_MAX_ERROR_TEXT);
+	}
 #endif
 	RemoveTrailingCRLF(errorText);
 }
@@ -839,6 +841,22 @@ extern "C" DWORD EXPORT DrvExecute(ORACLE_CONN *pConn, ORACLE_STATEMENT *stmt, T
 	if(errorText != NULL)
 	{
 		strncpy(errorText, pConn->lastErrorText, DBDRV_MAX_ERROR_TEXT);
+
+		OCI_Error *err = OCI_GetBatchError(stmt->handleStmt);
+
+		while (err)
+		{
+			char tmp[256] = { 0 };
+			snprintf(tmp, 256, "Error at row %d : %s", OCI_ErrorGetRow(err), OCI_ErrorGetString(err));
+
+			if ((strlen(errorText) + 256) < DBDRV_MAX_ERROR_TEXT)
+			{
+				strcat(errorText, tmp);
+			}
+
+			err = OCI_GetBatchError(stmt->handleStmt);
+		}
+
 		errorText[DBDRV_MAX_ERROR_TEXT - 1] = 0;
 	}
 	MutexUnlock(pConn->mutexQueryLock);
