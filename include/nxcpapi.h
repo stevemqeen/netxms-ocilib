@@ -261,13 +261,8 @@ private:
 	BYTE m_iv[EVP_MAX_IV_LENGTH];
 #ifdef _WITH_ENCRYPTION
    MUTEX m_encryptorLock;
-#if WITH_OPENSSL
-   EVP_CIPHER_CTX m_encryptor;
-   EVP_CIPHER_CTX m_decryptor;
-#elif WITH_COMMONCRYPTO
-   CCCryptorRef m_encryptor;
-   CCCryptorRef m_decryptor;
-#endif
+   EVP_CIPHER_CTX *m_encryptor;
+   EVP_CIPHER_CTX *m_decryptor;
 #endif
 
 	NXCPEncryptionContext();
@@ -597,6 +592,7 @@ void LIBNETXMS_EXPORTABLE PrepareKeyRequestMsg(NXCPMessage *pMsg, RSA *pServerKe
 RSA LIBNETXMS_EXPORTABLE *LoadRSAKeys(const TCHAR *pszKeyFile);
 RSA LIBNETXMS_EXPORTABLE *RSAKeyFromData(const BYTE *data, size_t size, bool withPrivate);
 void LIBNETXMS_EXPORTABLE RSAFree(RSA *key);
+RSA LIBNETXMS_EXPORTABLE *RSAGenerateKey(int bits);
 
 #ifdef _WIN32
 BOOL LIBNETXMS_EXPORTABLE SignMessageWithCAPI(BYTE *pMsg, UINT32 dwMsgLen, const CERT_CONTEXT *pCert,
