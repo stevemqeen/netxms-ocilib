@@ -10150,8 +10150,10 @@ void ClientSession::addCACertificate(NXCPMessage *pRequest)
 			pCert = d2i_X509(NULL, &p, dwLen);
 			if (pCert != NULL)
 			{
+				char subjectName[1024];
+				X509_NAME_oneline(X509_get_subject_name(pCert), subjectName, 1024);
 #ifdef UNICODE
-				WCHAR *wname = WideStringFromMBString(CHECK_NULL_A(pCert->name));
+				WCHAR *wname = WideStringFromMBString(subjectName);
 				pszEscSubject = EncodeSQLString(wname);
 				free(wname);
 #else

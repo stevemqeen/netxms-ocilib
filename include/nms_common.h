@@ -42,7 +42,7 @@
 #include <config-netware.h>
 #else
 #include <config.h>
-#if defined(WITH_OPENSSL) || defined(WITH_COMMONCRYPTO)
+#if defined(WITH_OPENSSL)
 #define _WITH_ENCRYPTION   1
 #endif
 #endif
