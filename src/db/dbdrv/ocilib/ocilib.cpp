@@ -1608,7 +1608,7 @@ extern "C" WCHAR EXPORT *DrvGetFieldUnbuffered(ORACLE_UNBUFFERED_RESULT *result,
 	}
 	else
 	{
-		nLen = min(nBufSize - 1, ((int)(result->pBuffers[nColumn].nLength / sizeof(WCHAR))));
+		nLen = MIN(nBufSize - 1, ((int)(result->pBuffers[nColumn].nLength / sizeof(WCHAR))));
 #if _WIN32
 		wcsncpy_s(pBuffer, nBufSize, result->pBuffers[nColumn]->pData, _TRUNCATE);
 #else

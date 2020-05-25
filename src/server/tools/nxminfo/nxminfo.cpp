@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
 
    NXMODULE_METADATA module;
    memset(&module, 0, sizeof(NXMODULE_METADATA));
-   memcpy(&module, metadata, min(metadata->size, sizeof(NXMODULE_METADATA)));
+   memcpy(&module, metadata, MIN(metadata->size, sizeof(NXMODULE_METADATA)));
 
    _tprintf(_T("Module:         %s\n"), modname);
    _tprintf(_T("Name:           %hs\n"), module.name);

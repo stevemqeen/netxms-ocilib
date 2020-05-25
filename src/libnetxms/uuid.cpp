@@ -331,15 +331,15 @@ static int get_node_id(unsigned char *node_id)
 	
 /*
  * BSD 4.4 defines the size of an ifreq to be
- * max(sizeof(ifreq), sizeof(ifreq.ifr_name)+ifreq.ifr_addr.sa_len
+ * MAX(sizeof(ifreq), sizeof(ifreq.ifr_name)+ifreq.ifr_addr.sa_len
  * However, under earlier systems, sa_len isn't present, so the size is 
  * just sizeof(struct ifreq)
  */
 #ifdef HAVE_SA_LEN
-#ifndef max
-#define max(a,b) ((a) > (b) ? (a) : (b))
+#ifndef MAX
+#define MAX(a,b) ((a) > (b) ? (a) : (b))
 #endif
-#define ifreq_size(i) max(sizeof(struct ifreq),\
+#define ifreq_size(i) MAX(sizeof(struct ifreq),\
      sizeof((i).ifr_name)+(i).ifr_addr.sa_len)
 #else
 #define ifreq_size(i) sizeof(struct ifreq)
