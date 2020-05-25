@@ -157,7 +157,7 @@ static void ResetExpiredConnections()
       }
 	}
 	
-   int count = min(availCount / 2 + 1, reconnList.size()); // reset no more than 50% of available connections
+   int count = MIN(availCount / 2 + 1, reconnList.size()); // reset no more than 50% of available connections
    if (count < reconnList.size())
    {
       reconnList.sort(ResetListSortCallback);

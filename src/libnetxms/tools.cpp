@@ -587,7 +587,7 @@ const TCHAR LIBNETXMS_EXPORTABLE *ExpandFileName(const TCHAR *name, TCHAR *buffe
 			int j = ++i;
 			while((temp[j] != _T('`')) && (temp[j] != 0))
 				j++;
-			int len = min(j - i, 1023);
+			int len = MIN(j - i, 1023);
 			memcpy(command, &temp[i], len * sizeof(TCHAR));
 			command[len] = 0;
 
@@ -606,7 +606,7 @@ const TCHAR LIBNETXMS_EXPORTABLE *ExpandFileName(const TCHAR *name, TCHAR *buffe
 					if (lf != NULL)
 						*lf = 0;
 
-					len = (int)min(strlen(result), bufSize - outpos - 1);
+					len = (int)MIN(strlen(result), bufSize - outpos - 1);
 #ifdef UNICODE
 					MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, result, len, &buffer[outpos], len);
 #else
@@ -625,7 +625,7 @@ const TCHAR LIBNETXMS_EXPORTABLE *ExpandFileName(const TCHAR *name, TCHAR *buffe
 			while((temp[j] != _T('}')) && (temp[j] != 0))
 				j++;
 
-			int len = min(j - i, 1023);
+			int len = MIN(j - i, 1023);
 
          TCHAR varName[256];
          memcpy(varName, &temp[i], len * sizeof(TCHAR));
@@ -634,7 +634,7 @@ const TCHAR LIBNETXMS_EXPORTABLE *ExpandFileName(const TCHAR *name, TCHAR *buffe
          TCHAR *result = _tgetenv(varName);
          if (result != NULL)
          {
-            len = (int)min(_tcslen(result), bufSize - outpos - 1);
+            len = (int)MIN(_tcslen(result), bufSize - outpos - 1);
             memcpy(&buffer[outpos], result, len * sizeof(TCHAR));
          }
          else
@@ -1231,7 +1231,7 @@ int LIBNETXMS_EXPORTABLE ConnectEx(SOCKET s, struct sockaddr *addr, int len, UIN
 				if ((rc != -1) || (errno != EINTR))
 					break;
 				UINT32 elapsed = (UINT32)(GetCurrentTimeMs() - startTime);
-				timeout -= min(timeout, elapsed);
+				timeout -= MIN(timeout, elapsed);
 			} while(timeout > 0);
 
 			if (rc > 0)
@@ -1273,7 +1273,7 @@ int LIBNETXMS_EXPORTABLE ConnectEx(SOCKET s, struct sockaddr *addr, int len, UIN
 				if ((rc != -1) || (errno != EINTR))
 					break;
 				UINT32 elapsed = (UINT32)(GetCurrentTimeMs() - startTime);
-				timeout -= min(timeout, elapsed);
+				timeout -= MIN(timeout, elapsed);
 			} while(timeout > 0);
 #endif
 			if (rc > 0)
@@ -1964,7 +1964,7 @@ static BYTE *LoadFileContent(int fd, UINT32 *pdwFileSize)
          *pdwFileSize = (UINT32)fs.st_size;
          for(iBufPos = 0; iBufPos < fs.st_size; iBufPos += iBytesRead)
          {
-            iNumBytes = min(16384, (int)fs.st_size - iBufPos);
+            iNumBytes = MIN(16384, (int)fs.st_size - iBufPos);
             if ((iBytesRead = _read(fd, &pBuffer[iBufPos], iNumBytes)) < 0)
             {
                free(pBuffer);
