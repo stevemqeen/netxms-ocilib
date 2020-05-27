@@ -405,12 +405,20 @@ WCHAR LIBNETXMS_EXPORTABLE *WideStringFromMBStringSysLocale(const char *pszStrin
  */
 WCHAR LIBNETXMS_EXPORTABLE *WideStringFromMBString(const char *src)
 {
+#ifdef _WIN32
+   return WideStringFromMBString(src);
+#else
    if (src == NULL)
       return NULL;
    int len = (int)strlen(src) + 1;
    WCHAR *out = (WCHAR *)malloc(len * sizeof(WCHAR));
+#if HAVE_MBSTOWCS
+   mbstowcs(out, src, len);
+#else
    MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, src, -1, out, len);
+#endif
    return out;
+#endif
 }
 
 /**
