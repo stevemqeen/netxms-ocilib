@@ -247,10 +247,10 @@ LONG H_ProcessInfo(const char *param, const char *arg, char *value, AbstractComm
 							result += currValue;
 							break;
 						case INFOTYPE_MIN:
-							result = min(result, currValue);
+							result = MIN(result, currValue);
 							break;
 						case INFOTYPE_MAX:
-							result = max(result, currValue);
+							result = MAX(result, currValue);
 							break;
 					}
 				}

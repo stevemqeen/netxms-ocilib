@@ -42,7 +42,7 @@
 #include <config-netware.h>
 #else
 #include <config.h>
-#if defined(WITH_OPENSSL) || defined(WITH_COMMONCRYPTO)
+#if defined(WITH_OPENSSL)
 #define _WITH_ENCRYPTION   1
 #endif
 #endif
@@ -1236,13 +1236,13 @@ inline void nx_free(void *p)
 #endif
 
 /**
- * Define min() and max() if needed
+ * Define MIN() and MAX() if needed
  */
-#ifndef min
-#define min(a, b) ((a) < (b) ? (a) : (b))
+#ifndef MIN
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
-#ifndef max
-#define max(a, b) ((a) > (b) ? (a) : (b))
+#ifndef MAX
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
 #endif
 
 /**

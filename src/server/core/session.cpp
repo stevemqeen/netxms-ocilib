@@ -35,8 +35,8 @@
 #include "zeromq.h"
 #endif
 
-#ifndef min
-#define min(a,b) ((a) < (b) ? (a) : (b))
+#ifndef MIN
+#define MIN(a,b) ((a) < (b) ? (a) : (b))
 #endif
 
 // WARNING! this hack works only for d2i_X509(); be carefull when adding new code
@@ -2504,7 +2504,7 @@ void ClientSession::sendEventLog(NXCPMessage *pRequest)
                     _T("SELECT event_id,event_code,event_timestamp,event_source,")
                     _T("event_severity,event_message,user_tag FROM event_log ")
                     _T("ORDER BY event_id LIMIT %u OFFSET %u"),
-                    dwMaxRecords, dwNumRows - min(dwNumRows, dwMaxRecords));
+                    dwMaxRecords, dwNumRows - MIN(dwNumRows, dwMaxRecords));
          break;
       case DB_SYNTAX_MSSQL:
          _sntprintf(szQuery, 1024,
@@ -8511,7 +8511,7 @@ void ClientSession::sendSyslog(NXCPMessage *pRequest)
                     _T("SELECT msg_id,msg_timestamp,facility,severity,")
                     _T("source_object_id,hostname,msg_tag,msg_text FROM syslog ")
                     _T("ORDER BY msg_id LIMIT %u OFFSET %u"),
-                    dwMaxRecords, dwNumRows - min(dwNumRows, dwMaxRecords));
+                    dwMaxRecords, dwNumRows - MIN(dwNumRows, dwMaxRecords));
          break;
       case DB_SYNTAX_MSSQL:
          _sntprintf(szQuery, 1024,
@@ -8649,7 +8649,7 @@ void ClientSession::SendTrapLog(NXCPMessage *pRequest)
                        _T("SELECT trap_id,trap_timestamp,ip_addr,object_id,")
                        _T("trap_oid,trap_varlist FROM snmp_trap_log ")
                        _T("ORDER BY trap_id LIMIT %u OFFSET %u"),
-                       dwMaxRecords, dwNumRows - min(dwNumRows, dwMaxRecords));
+                       dwMaxRecords, dwNumRows - MIN(dwNumRows, dwMaxRecords));
             break;
          case DB_SYNTAX_MSSQL:
             _sntprintf(szQuery, 1024,
@@ -10150,8 +10150,10 @@ void ClientSession::addCACertificate(NXCPMessage *pRequest)
 			pCert = d2i_X509(NULL, &p, dwLen);
 			if (pCert != NULL)
 			{
+				char subjectName[1024];
+				X509_NAME_oneline(X509_get_subject_name(pCert), subjectName, 1024);
 #ifdef UNICODE
-				WCHAR *wname = WideStringFromMBString(CHECK_NULL_A(pCert->name));
+				WCHAR *wname = WideStringFromMBString(subjectName);
 				pszEscSubject = EncodeSQLString(wname);
 				free(wname);
 #else

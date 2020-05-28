@@ -1312,7 +1312,7 @@ NXSL_Value *DCItem::getValueForNXSL(int nFunction, int nPolls)
          if (m_bCacheLoaded && (m_cacheSize > 0))
          {
             ItemValue result;
-            CalculateItemValueAverage(result, m_dataType, min(m_cacheSize, (UINT32)nPolls), m_ppValueCache);
+            CalculateItemValueAverage(result, m_dataType, MIN(m_cacheSize, (UINT32)nPolls), m_ppValueCache);
             pValue = new NXSL_Value(result.getString());
          }
          else
@@ -1324,7 +1324,7 @@ NXSL_Value *DCItem::getValueForNXSL(int nFunction, int nPolls)
          if (m_bCacheLoaded && (m_cacheSize > 0))
          {
             ItemValue result;
-            CalculateItemValueMD(result, m_dataType, min(m_cacheSize, (UINT32)nPolls), m_ppValueCache);
+            CalculateItemValueMD(result, m_dataType, MIN(m_cacheSize, (UINT32)nPolls), m_ppValueCache);
             pValue = new NXSL_Value(result.getString());
          }
          else
@@ -1489,7 +1489,7 @@ void DCItem::updateFromTemplate(DCObject *src)
    // Copy thresholds
    // ***************************
    // First, skip matching thresholds
-	int count = min(getThresholdCount(), item->getThresholdCount());
+	int count = MIN(getThresholdCount(), item->getThresholdCount());
 	int i;
    for(i = 0; i < count; i++)
       if (!m_thresholds->get(i)->compare(item->m_thresholds->get(i)))

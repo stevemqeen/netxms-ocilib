@@ -28,7 +28,7 @@
  * Tunnel registration
  */
 static RefCountHashMap<UINT32, AgentTunnel> s_boundTunnels(true);
-static Array s_unboundTunnels(16, 16, false);
+static ObjectRefArray<AgentTunnel> s_unboundTunnels(16, 16);
 static Mutex s_tunnelListLock;
 
 /**
@@ -108,9 +108,9 @@ UINT32 BindAgentTunnel(UINT32 tunnelId, UINT32 nodeId)
    s_tunnelListLock.lock();
    for(int i = 0; i < s_unboundTunnels.size(); i++)
    {
-      if (((AgentTunnel *)s_unboundTunnels.get(i))->getId() == tunnelId)
+      if (s_unboundTunnels.get(i)->getId() == tunnelId)
       {
-         tunnel = (AgentTunnel *)s_unboundTunnels.get(i);
+         tunnel = s_unboundTunnels.get(i);
          tunnel->incRefCount();
          break;
       }
@@ -137,7 +137,7 @@ void GetUnboundAgentTunnels(NXCPMessage *msg)
    UINT32 fieldId = VID_ELEMENT_LIST_BASE;
    for(int i = 0; i < s_unboundTunnels.size(); i++)
    {
-      ((AgentTunnel *)s_unboundTunnels.get(i))->fillMessage(msg, fieldId);
+      (s_unboundTunnels.get(i))->fillMessage(msg, fieldId);
       fieldId += 10;
    }
    msg->setField(VID_NUM_ELEMENTS, (UINT32)s_unboundTunnels.size());
@@ -170,7 +170,7 @@ void ShowAgentTunnels(CONSOLE_CTX console)
             _T("-----+--------------------------+--------------------------+------------------+------------------------\n"));
    for(int i = 0; i < s_unboundTunnels.size(); i++)
    {
-      const AgentTunnel *t = (AgentTunnel *)s_unboundTunnels.get(i);
+      const AgentTunnel *t = s_unboundTunnels.get(i);
       TCHAR ipAddrBuffer[64];
       ConsolePrintf(console, _T("%4d | %-24s | %-24s | %-16s | %s\n"), t->getId(), t->getAddress().toString(ipAddrBuffer), t->getSystemName(), t->getPlatformName(), t->getAgentVersion());
    }
@@ -601,7 +601,7 @@ int AgentTunnelCommChannel::recv(void *buffer, size_t size, UINT32 timeout)
       return -2;
 
    MutexLock(m_bufferLock);
-   size_t bytes = min(size, m_size);
+   size_t bytes = MIN(size, m_size);
    memcpy(buffer, &m_buffer[m_head], bytes);
    m_size -= bytes;
    if (m_size == 0)
@@ -690,20 +690,28 @@ static void SetupTunnel(void *arg)
    X509 *cert = NULL;
 
    // Setup secure connection
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+   const SSL_METHOD *method = TLS_method();
+#else
    const SSL_METHOD *method = SSLv23_method();
+#endif
    if (method == NULL)
    {
       nxlog_debug(4, _T("SetupTunnel(%s): cannot obtain TLS method"), (const TCHAR *)request->addr.toString());
       goto failure;
    }
 
-   context = SSL_CTX_new(method);
+   context = SSL_CTX_new((SSL_METHOD *)method);
    if (context == NULL)
    {
       nxlog_debug(4, _T("SetupTunnel(%s): cannot create TLS context"), (const TCHAR *)request->addr.toString());
       goto failure;
    }
+#ifdef SSL_OP_NO_COMPRESSION
    SSL_CTX_set_options(context, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION);
+#else
+   SSL_CTX_set_options(context, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+#endif
    if (!SetupServerTlsContext(context))
    {
       nxlog_debug(4, _T("SetupTunnel(%s): cannot configure TLS context"), (const TCHAR *)request->addr.toString());

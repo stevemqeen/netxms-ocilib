@@ -78,7 +78,7 @@ int ZFile::zwrite(const void *pBuf, int nLen)
 
    for(nSrcPos = 0, nRet = 0; nSrcPos < nLen; nSrcPos += nBytes)
    {
-      nBytes = min(nLen - nSrcPos, DATA_BUFFER_SIZE - m_nBufferSize);
+      nBytes = MIN(nLen - nSrcPos, DATA_BUFFER_SIZE - m_nBufferSize);
       memcpy(&m_pDataBuffer[m_nBufferSize], (BYTE *)pBuf + nSrcPos, nBytes);
       m_nBufferSize += nBytes;
       if (m_nBufferSize == DATA_BUFFER_SIZE)
@@ -158,7 +158,7 @@ int ZFile::zread(void *pBuf, int nLen)
    {
       if (!fillDataBuffer())
          return 0;   // EOF or error
-      nBytes = min(nLen - nDstPos, m_nBufferSize);
+      nBytes = MIN(nLen - nDstPos, m_nBufferSize);
       memcpy((BYTE *)pBuf + nDstPos, m_pBufferPos, nBytes);
       m_pBufferPos += nBytes;
       m_nBufferSize -= nBytes;
