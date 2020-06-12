@@ -560,8 +560,8 @@ bool SNMP_PDU::parseV3SecurityUsm(BYTE *data, size_t dataLength)
       return false;
    if (type != ASN_OCTET_STRING)
       return false;
-	memcpy(m_signature, currPos, min(length, 12));
-	memset(currPos, 0, min(length, 12));	// Replace with 0 to generate correct hash in validate method
+	memcpy(m_signature, currPos, MIN(length, 12));
+	memset(currPos, 0, MIN(length, 12));	// Replace with 0 to generate correct hash in validate method
    currPos += length;
    remLength -= length + idLength;
 
@@ -570,7 +570,7 @@ bool SNMP_PDU::parseV3SecurityUsm(BYTE *data, size_t dataLength)
       return false;
    if (type != ASN_OCTET_STRING)
       return false;
-	memcpy(m_salt, currPos, min(length, 8));
+	memcpy(m_salt, currPos, MIN(length, 8));
 
 	return true;
 }
@@ -1375,7 +1375,7 @@ void SNMP_PDU::bindVariable(SNMP_Variable *pVar)
  */
 void SNMP_PDU::setContextEngineId(const BYTE *id, size_t len)
 {
-	m_contextEngineIdLen = min(len, SNMP_MAX_ENGINEID_LEN);
+	m_contextEngineIdLen = MIN(len, SNMP_MAX_ENGINEID_LEN);
 	memcpy(m_contextEngineId, id, m_contextEngineIdLen);
 }
 
@@ -1384,7 +1384,7 @@ void SNMP_PDU::setContextEngineId(const BYTE *id, size_t len)
  */
 void SNMP_PDU::setContextEngineId(const char *id)
 {
-	m_contextEngineIdLen = min((int)strlen(id), SNMP_MAX_ENGINEID_LEN);
+	m_contextEngineIdLen = MIN((int)strlen(id), SNMP_MAX_ENGINEID_LEN);
 	memcpy(m_contextEngineId, id, m_contextEngineIdLen);
 }
 

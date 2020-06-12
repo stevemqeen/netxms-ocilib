@@ -912,7 +912,7 @@ int TunnelCommChannel::recv(void *buffer, size_t size, UINT32 timeout)
       return -2;
 
    MutexLock(m_bufferLock);
-   size_t bytes = min(size, m_size);
+   size_t bytes = MIN(size, m_size);
    memcpy(buffer, &m_buffer[m_head], bytes);
    m_size -= bytes;
    if (m_size == 0)

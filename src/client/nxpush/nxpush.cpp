@@ -279,7 +279,7 @@ static BOOL Send()
 
 	for (i = 0; i < batches; i++)
 	{
-		size = min(s_optBatchSize, s_data.size() - (s_optBatchSize * i));
+		size = MIN(s_optBatchSize, s_data.size() - (s_optBatchSize * i));
 
 		if (s_optVerbose > 1)
 		{

@@ -623,7 +623,7 @@ TCHAR *NXCPMessage::getFieldAsString(UINT32 fieldId, TCHAR *buffer, size_t buffe
          str = buffer;
       }
 
-      size_t length = (buffer == NULL) ? (*((UINT32 *)value) / 2) : min(*((UINT32 *)value) / 2, bufferSize - 1);
+      size_t length = (buffer == NULL) ? (*((UINT32 *)value) / 2) : MIN(*((UINT32 *)value) / 2, bufferSize - 1);
 #if defined(UNICODE) && defined(UNICODE_UCS4)
 		ucs2_to_ucs4((UCS2CHAR *)((BYTE *)value + 4), length, str, length + 1);
 #elif defined(UNICODE) && defined(UNICODE_UCS2)
@@ -667,7 +667,7 @@ char *NXCPMessage::getFieldAsMBString(UINT32 fieldId, char *buffer, size_t buffe
          str = buffer;
       }
 
-      size_t length = (buffer == NULL) ? (*((UINT32 *)value) / 2) : min(*((UINT32 *)value) / 2, bufferSize - 1);
+      size_t length = (buffer == NULL) ? (*((UINT32 *)value) / 2) : MIN(*((UINT32 *)value) / 2, bufferSize - 1);
 		ucs2_to_mb((UCS2CHAR *)((BYTE *)value + 4), (int)length, str, (int)length + 1);
       str[length] = 0;
    }
@@ -752,7 +752,7 @@ UINT32 NXCPMessage::getFieldAsBinary(UINT32 fieldId, BYTE *pBuffer, size_t buffe
    {
       size = *((UINT32 *)value);
       if (pBuffer != NULL)
-         memcpy(pBuffer, (BYTE *)value + 4, min(bufferSize, size));
+         memcpy(pBuffer, (BYTE *)value + 4, MIN(bufferSize, size));
    }
    else
    {
@@ -1118,7 +1118,7 @@ String NXCPMessage::dump(const NXCP_MESSAGE *msg, int version)
    // Dump raw message
    for(i = 0; i < (int)size; i += 16)
    {
-      BinToStr(((BYTE *)msg) + i, min(16, size - i), buffer); 
+      BinToStr(((BYTE *)msg) + i, MIN(16, size - i), buffer); 
       out.appendFormattedString(_T("  ** %s\n"), buffer);
    }
 

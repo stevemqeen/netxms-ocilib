@@ -368,7 +368,7 @@ int Serial::read(char *pBuff, int nSize)
          if (stat.cbInQue > 0)
          {
             // Read rest of buffered data
-         	if (ReadFile(m_hPort, &pBuff[1], min(stat.cbInQue, (DWORD)nSize - 1), &nDone, NULL))
+         	if (ReadFile(m_hPort, &pBuff[1], MIN(stat.cbInQue, (DWORD)nSize - 1), &nDone, NULL))
             {
                nRet += (int)nDone;
             }
@@ -554,7 +554,7 @@ bool Serial::write(const char *data, int length)
       int pos = 0;
       while(pos < length)
       {
-         int bs = min(m_writeBlockSize, length - pos);
+         int bs = MIN(m_writeBlockSize, length - pos);
          if (!writeBlock(&data[pos], bs))
             return false;
          pos += bs;

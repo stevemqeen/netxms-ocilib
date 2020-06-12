@@ -272,7 +272,7 @@ static BOOL ParseSyslogMessage(char *psMsg, int nMsgLen, time_t receiverTime, NX
    }
    pCurr -= i;
    nPos -= i;
-   nLen = min(nMsgLen - nPos, MAX_LOG_MSG_LENGTH);
+   nLen = MIN(nMsgLen - nPos, MAX_LOG_MSG_LENGTH);
    memcpy(pRec->szMessage, pCurr, nLen);
 
    return TRUE;
@@ -552,7 +552,7 @@ static void SyslogParserCallback(UINT32 eventCode, const TCHAR *eventName, const
 	TCHAR *plist[33];
 	TCHAR repeatCountText[16];
 
-	int count = min(paramCount, 32);
+	int count = MIN(paramCount, 32);
 	format[count + 1] = 0;
 	for(int i = 0; i < count; i++)
 		plist[i] = params[i];
@@ -951,7 +951,7 @@ void StartSyslogServer()
    {
       if (DBGetNumRows(hResult) > 0)
       {
-         s_msgId = max(DBGetFieldUInt64(hResult, 0, 0) + 1, s_msgId);
+         s_msgId = MAX(DBGetFieldUInt64(hResult, 0, 0) + 1, s_msgId);
       }
       DBFreeResult(hResult);
    }

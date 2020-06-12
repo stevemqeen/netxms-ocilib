@@ -637,7 +637,7 @@ NXCPEncryptionContext *NXCPEncryptionContext::create(NXCPMessage *msg, RSA *priv
             if ((nSize == nIVLen) &&
                 (nIVLen <= EVP_CIPHER_iv_length(s_ciphers[ctx->m_cipher]())))
             {
-               memcpy(ctx->m_iv, ucSessionKey, min(EVP_MAX_IV_LENGTH, nIVLen));
+               memcpy(ctx->m_iv, ucSessionKey, MIN(EVP_MAX_IV_LENGTH, nIVLen));
             }
             else
             {
