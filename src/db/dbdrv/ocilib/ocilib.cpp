@@ -1606,9 +1606,13 @@ extern "C" TCHAR EXPORT *DrvGetFieldUnbuffered(ORACLE_UNBUFFERED_RESULT *result,
 	}
 	else
 	{
-		nLen = min(nBufSize - 1, ((int)(result->pBuffers[nColumn].nLength / sizeof(TCHAR))));
-
+		nLen = MIN(nBufSize - 1, ((int)(result->pBuffers[nColumn].nLength / sizeof(TCHAR))));
+#if _WIN32
+		wcsncpy_s(pBuffer, nBufSize, result->pBuffers[nColumn]->pData, _TRUNCATE);
+#else
 		memcpy(pBuffer, result->pBuffers[nColumn].pData, nLen * sizeof(TCHAR));
+#endif
+
 		pBuffer[nLen] = 0;
 	}
 

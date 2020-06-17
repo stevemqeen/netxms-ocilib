@@ -167,7 +167,7 @@ static void CpuUsageCollector()
 		if (ret < 4)
 			continue;
 
-		maxCpu = max(cpu, maxCpu);
+		maxCpu = MAX(cpu, maxCpu);
 
 		uint64_t userDelta, systemDelta, idleDelta;
 

@@ -91,7 +91,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_NETWORK_OBJECT] = max(s_freeIdTable[IDG_NETWORK_OBJECT],
+         s_freeIdTable[IDG_NETWORK_OBJECT] = MAX(s_freeIdTable[IDG_NETWORK_OBJECT],
                                                    DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
@@ -99,7 +99,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_NETWORK_OBJECT] = max(s_freeIdTable[IDG_NETWORK_OBJECT],
+         s_freeIdTable[IDG_NETWORK_OBJECT] = MAX(s_freeIdTable[IDG_NETWORK_OBJECT],
                                                    DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
@@ -107,7 +107,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_NETWORK_OBJECT] = max(s_freeIdTable[IDG_NETWORK_OBJECT],
+         s_freeIdTable[IDG_NETWORK_OBJECT] = MAX(s_freeIdTable[IDG_NETWORK_OBJECT],
                                                    DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
@@ -115,7 +115,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_NETWORK_OBJECT] = max(s_freeIdTable[IDG_NETWORK_OBJECT],
+         s_freeIdTable[IDG_NETWORK_OBJECT] = MAX(s_freeIdTable[IDG_NETWORK_OBJECT],
                                                    DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
@@ -123,7 +123,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_NETWORK_OBJECT] = max(s_freeIdTable[IDG_NETWORK_OBJECT],
+         s_freeIdTable[IDG_NETWORK_OBJECT] = MAX(s_freeIdTable[IDG_NETWORK_OBJECT],
                                                    DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
@@ -131,7 +131,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_NETWORK_OBJECT] = max(s_freeIdTable[IDG_NETWORK_OBJECT],
+         s_freeIdTable[IDG_NETWORK_OBJECT] = MAX(s_freeIdTable[IDG_NETWORK_OBJECT],
                                                    DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
@@ -139,7 +139,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_NETWORK_OBJECT] = max(s_freeIdTable[IDG_NETWORK_OBJECT],
+         s_freeIdTable[IDG_NETWORK_OBJECT] = MAX(s_freeIdTable[IDG_NETWORK_OBJECT],
                                                    DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
@@ -147,7 +147,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_NETWORK_OBJECT] = max(s_freeIdTable[IDG_NETWORK_OBJECT],
+         s_freeIdTable[IDG_NETWORK_OBJECT] = MAX(s_freeIdTable[IDG_NETWORK_OBJECT],
                                                    DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
@@ -155,7 +155,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_NETWORK_OBJECT] = max(s_freeIdTable[IDG_NETWORK_OBJECT],
+         s_freeIdTable[IDG_NETWORK_OBJECT] = MAX(s_freeIdTable[IDG_NETWORK_OBJECT],
                                                    DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
@@ -163,7 +163,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_NETWORK_OBJECT] = max(s_freeIdTable[IDG_NETWORK_OBJECT],
+         s_freeIdTable[IDG_NETWORK_OBJECT] = MAX(s_freeIdTable[IDG_NETWORK_OBJECT],
                                                    DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
@@ -171,7 +171,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_NETWORK_OBJECT] = max(s_freeIdTable[IDG_NETWORK_OBJECT],
+         s_freeIdTable[IDG_NETWORK_OBJECT] = MAX(s_freeIdTable[IDG_NETWORK_OBJECT],
                                                    DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
@@ -179,7 +179,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_NETWORK_OBJECT] = max(s_freeIdTable[IDG_NETWORK_OBJECT],
+         s_freeIdTable[IDG_NETWORK_OBJECT] = MAX(s_freeIdTable[IDG_NETWORK_OBJECT],
                                                    DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
@@ -187,7 +187,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_NETWORK_OBJECT] = max(s_freeIdTable[IDG_NETWORK_OBJECT],
+         s_freeIdTable[IDG_NETWORK_OBJECT] = MAX(s_freeIdTable[IDG_NETWORK_OBJECT],
                                                    DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
@@ -195,7 +195,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_NETWORK_OBJECT] = max(s_freeIdTable[IDG_NETWORK_OBJECT],
+         s_freeIdTable[IDG_NETWORK_OBJECT] = MAX(s_freeIdTable[IDG_NETWORK_OBJECT],
                                                    DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
@@ -203,7 +203,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_NETWORK_OBJECT] = max(s_freeIdTable[IDG_NETWORK_OBJECT],
+         s_freeIdTable[IDG_NETWORK_OBJECT] = MAX(s_freeIdTable[IDG_NETWORK_OBJECT],
                                                    DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
@@ -211,7 +211,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_NETWORK_OBJECT] = max(s_freeIdTable[IDG_NETWORK_OBJECT],
+         s_freeIdTable[IDG_NETWORK_OBJECT] = MAX(s_freeIdTable[IDG_NETWORK_OBJECT],
                                                    DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
@@ -221,7 +221,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_EVENT] = max(s_freeIdTable[IDG_EVENT], DBGetFieldULong(hResult, 0, 0) + 1);
+         s_freeIdTable[IDG_EVENT] = MAX(s_freeIdTable[IDG_EVENT], DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
 
@@ -230,14 +230,14 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_ITEM] = max(s_freeIdTable[IDG_ITEM], DBGetFieldULong(hResult, 0, 0) + 1);
+         s_freeIdTable[IDG_ITEM] = MAX(s_freeIdTable[IDG_ITEM], DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
    hResult = DBSelect(hdb, _T("SELECT max(item_id) FROM dc_tables"));
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_ITEM] = max(s_freeIdTable[IDG_ITEM], DBGetFieldULong(hResult, 0, 0) + 1);
+         s_freeIdTable[IDG_ITEM] = MAX(s_freeIdTable[IDG_ITEM], DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
 
@@ -246,7 +246,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_JOB] = max(1, DBGetFieldULong(hResult, 0, 0) + 1);
+         s_freeIdTable[IDG_JOB] = MAX(1, DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
 
@@ -255,7 +255,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_SNMP_TRAP] = max(s_freeIdTable[IDG_SNMP_TRAP], DBGetFieldULong(hResult, 0, 0) + 1);
+         s_freeIdTable[IDG_SNMP_TRAP] = MAX(s_freeIdTable[IDG_SNMP_TRAP], DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
 
@@ -264,7 +264,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_ACTION] = max(1, DBGetFieldULong(hResult, 0, 0) + 1);
+         s_freeIdTable[IDG_ACTION] = MAX(1, DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
 
@@ -273,7 +273,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_EVENT_GROUP] = max(0x80000000, DBGetFieldULong(hResult, 0, 0) + 1);
+         s_freeIdTable[IDG_EVENT_GROUP] = MAX(0x80000000, DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
 
@@ -282,7 +282,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_THRESHOLD] = max(s_freeIdTable[IDG_THRESHOLD],
+         s_freeIdTable[IDG_THRESHOLD] = MAX(s_freeIdTable[IDG_THRESHOLD],
                                               DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
@@ -290,7 +290,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_THRESHOLD] = max(s_freeIdTable[IDG_THRESHOLD],
+         s_freeIdTable[IDG_THRESHOLD] = MAX(s_freeIdTable[IDG_THRESHOLD],
                                               DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
@@ -300,7 +300,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_USER] = max(s_freeIdTable[IDG_USER],
+         s_freeIdTable[IDG_USER] = MAX(s_freeIdTable[IDG_USER],
                                          DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
@@ -310,7 +310,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_USER_GROUP] = max(s_freeIdTable[IDG_USER_GROUP],
+         s_freeIdTable[IDG_USER_GROUP] = MAX(s_freeIdTable[IDG_USER_GROUP],
                                                DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
@@ -320,7 +320,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_ALARM] = max(s_freeIdTable[IDG_ALARM],
+         s_freeIdTable[IDG_ALARM] = MAX(s_freeIdTable[IDG_ALARM],
                                           DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
@@ -330,7 +330,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_ALARM_NOTE] = max(s_freeIdTable[IDG_ALARM_NOTE],
+         s_freeIdTable[IDG_ALARM_NOTE] = MAX(s_freeIdTable[IDG_ALARM_NOTE],
                                                DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
@@ -340,7 +340,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         m_freeEventId = max(m_freeEventId, DBGetFieldUInt64(hResult, 0, 0) + 1);
+         m_freeEventId = MAX(m_freeEventId, DBGetFieldUInt64(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
 
@@ -349,7 +349,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_PACKAGE] = max(s_freeIdTable[IDG_PACKAGE],
+         s_freeIdTable[IDG_PACKAGE] = MAX(s_freeIdTable[IDG_PACKAGE],
                                             DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
@@ -359,7 +359,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_OBJECT_TOOL] = max(s_freeIdTable[IDG_OBJECT_TOOL],
+         s_freeIdTable[IDG_OBJECT_TOOL] = MAX(s_freeIdTable[IDG_OBJECT_TOOL],
                                                 DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
@@ -369,7 +369,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_SCRIPT] = max(s_freeIdTable[IDG_SCRIPT],
+         s_freeIdTable[IDG_SCRIPT] = MAX(s_freeIdTable[IDG_SCRIPT],
                                            DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
@@ -379,7 +379,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_AGENT_CONFIG] = max(s_freeIdTable[IDG_AGENT_CONFIG],
+         s_freeIdTable[IDG_AGENT_CONFIG] = MAX(s_freeIdTable[IDG_AGENT_CONFIG],
                                                  DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
@@ -389,7 +389,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_GRAPH] = max(s_freeIdTable[IDG_GRAPH],
+         s_freeIdTable[IDG_GRAPH] = MAX(s_freeIdTable[IDG_GRAPH],
                                           DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
@@ -399,7 +399,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_CERTIFICATE] = max(s_freeIdTable[IDG_CERTIFICATE],
+         s_freeIdTable[IDG_CERTIFICATE] = MAX(s_freeIdTable[IDG_CERTIFICATE],
                                                 DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
@@ -409,7 +409,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_SLM_TICKET] = max(s_freeIdTable[IDG_SLM_TICKET],
+         s_freeIdTable[IDG_SLM_TICKET] = MAX(s_freeIdTable[IDG_SLM_TICKET],
                                                DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
@@ -419,7 +419,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_DCT_COLUMN] = max(s_freeIdTable[IDG_DCT_COLUMN],
+         s_freeIdTable[IDG_DCT_COLUMN] = MAX(s_freeIdTable[IDG_DCT_COLUMN],
                                                DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
@@ -429,7 +429,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_MAPPING_TABLE] = max(s_freeIdTable[IDG_MAPPING_TABLE],
+         s_freeIdTable[IDG_MAPPING_TABLE] = MAX(s_freeIdTable[IDG_MAPPING_TABLE],
                                                   DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
@@ -439,7 +439,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_DCI_SUMMARY_TABLE] = max(s_freeIdTable[IDG_DCI_SUMMARY_TABLE],
+         s_freeIdTable[IDG_DCI_SUMMARY_TABLE] = MAX(s_freeIdTable[IDG_DCI_SUMMARY_TABLE],
                                                       DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
@@ -449,7 +449,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_SCHEDULED_TASK] = max(s_freeIdTable[IDG_SCHEDULED_TASK],
+         s_freeIdTable[IDG_SCHEDULED_TASK] = MAX(s_freeIdTable[IDG_SCHEDULED_TASK],
                                                       DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
@@ -459,7 +459,7 @@ BOOL InitIdTable()
    if (hResult != NULL)
    {
       if (DBGetNumRows(hResult) > 0)
-         s_freeIdTable[IDG_ALARM_CATEGORY] = max(s_freeIdTable[IDG_ALARM_CATEGORY],
+         s_freeIdTable[IDG_ALARM_CATEGORY] = MAX(s_freeIdTable[IDG_ALARM_CATEGORY],
                                                       DBGetFieldULong(hResult, 0, 0) + 1);
       DBFreeResult(hResult);
    }
