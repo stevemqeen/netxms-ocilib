@@ -210,17 +210,25 @@ extern "C" DBDRV_CONNECTION EXPORT DrvConnect(const char *szHost, const char *sz
 	 const char *szDatabase, const char *schema, TCHAR *errorText)
 {
 	PG_CONN *pConn;
-	char *port = NULL;
+	char *delim = NULL;
+
+	char szServerAddr[MAX_PATH] = { 0 };
+	char szServerPort[MAX_PATH] = { 0 };
 
 	if (szDatabase == NULL || *szDatabase == 0)
 	{
 		_tcscpy(errorText, _T("Database name is empty"));
 		return NULL;
 	}
-	if((port = (char *)strchr(szHost, ':'))!=NULL)
+
+	if ((delim = (char *)strchr(szHost, ':')) != NULL)
 	{
-		port[0]=0;
-		port++;
+		_tcsncpy(szServerAddr, szHost, strlen(szHost) - strlen(delim));
+		_tcsncpy(szServerPort, delim + 1, strlen(delim) - 1);
+	}
+	else
+	{
+		_tcsncpy(szServerAddr, szHost, strlen(szHost));
 	}
 	
 	pConn = (PG_CONN *)malloc(sizeof(PG_CONN));
@@ -228,7 +236,7 @@ extern "C" DBDRV_CONNECTION EXPORT DrvConnect(const char *szHost, const char *sz
 	if (pConn != NULL)
 	{
 		// should be replaced with PQconnectdb();
-		pConn->handle = PQsetdbLogin(szHost, port, NULL, NULL, szDatabase, szLogin, szPassword);
+		pConn->handle = PQsetdbLogin(szServerAddr, strlen(szServerPort) > 0 ? szServerPort : NULL, NULL, NULL, szDatabase, szLogin, szPassword);
 
 		if (PQstatus(pConn->handle) == CONNECTION_BAD)
 		{
@@ -823,7 +831,12 @@ extern "C" TCHAR EXPORT *DrvGetField(DBDRV_RESULT pResult, int nRow, int nColumn
 		return NULL;
 	}
 
-	_tcscpy(pBuffer, value);
+	if (strlen(value) > nBufLen)
+	{
+		fprintf(stderr, "DrvGetField input buffer size is smaller than output: %d > %d\n", strlen(value), nBufLen);
+	}
+
+	_tcsncpy(pBuffer, value, nBufLen);
 	pBuffer[nBufLen - 1] = 0;
 
 	return pBuffer;
