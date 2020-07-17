@@ -932,6 +932,7 @@ extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectUnbuffered(PG_CONN *pConn, TC
 	do
 	{
 		retry = false;
+
 		if (PQsendQuery(pConn->handle, queryUTF8))
 		{
 #ifdef _WIN32
@@ -947,6 +948,7 @@ extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectUnbuffered(PG_CONN *pConn, TC
 
 				// Fetch first row (to check for errors in Select instead of Fetch call)
 				result->fetchBuffer = PQgetResult(pConn->handle);
+
 				if ((PQresultStatus(result->fetchBuffer) == PGRES_COMMAND_OK) ||
 					(PQresultStatus(result->fetchBuffer) == PGRES_TUPLES_OK) ||
 					(PQresultStatus(result->fetchBuffer) == PGRES_SINGLE_TUPLE))
@@ -955,6 +957,7 @@ extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectUnbuffered(PG_CONN *pConn, TC
 					{
 						*errorText = 0;
 					}
+
 					*pdwError = DBERR_SUCCESS;
 					success = true;
 				}
@@ -980,11 +983,20 @@ extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectUnbuffered(PG_CONN *pConn, TC
 								errorText[len] = _T(' ');
 								len++;
 							}
+
 							_tcscpy(&errorText[len], PQerrorMessage(pConn->handle));
 							errorText[DBDRV_MAX_ERROR_TEXT - 1] = 0;
+
+							// Proceed while `isBusy` is freed
+							while (PQisBusy(pConn->handle) > 0)
+							{
+								PQflush(pConn->handle);
+								PQconsumeInput(pConn->handle);
+							}
 						}
 					}
 					PQclear(result->fetchBuffer);
+
 					result->fetchBuffer = NULL;
 					*pdwError = (PQstatus(pConn->handle) == CONNECTION_BAD) ? DBERR_CONNECTION_LOST : DBERR_OTHER_ERROR;
 				}
@@ -993,8 +1005,18 @@ extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectUnbuffered(PG_CONN *pConn, TC
 			{
 				if (errorText != NULL)
 				{
+					int currErrorLen = _tcslen(errorText);
 					_tcsncpy(errorText, _T("Internal error (call to PQsetSingleRowMode failed)"), DBDRV_MAX_ERROR_TEXT);
+					_tcsncat(errorText, PQerrorMessage(pConn->handle), (currErrorLen < DBDRV_MAX_ERROR_TEXT) ? (DBDRV_MAX_ERROR_TEXT - currErrorLen) : 0);
+
+					// Proceed while `isBusy` is freed
+					while (PQisBusy(pConn->handle) > 0)
+					{
+						PQflush(pConn->handle);
+						PQconsumeInput(pConn->handle);
+					}
 				}
+
 				*pdwError = (PQstatus(pConn->handle) == CONNECTION_BAD) ? DBERR_CONNECTION_LOST : DBERR_OTHER_ERROR;
 			}
 		}
@@ -1002,8 +1024,19 @@ extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectUnbuffered(PG_CONN *pConn, TC
 		{
 			if (errorText != NULL)
 			{
-				_tcsncpy(errorText, _T("Internal error (call to PQsendQuery failed)"), DBDRV_MAX_ERROR_TEXT);
+				_tcsncpy(errorText, _T("Internal error (call to PQsendQuery failed) "), DBDRV_MAX_ERROR_TEXT);
+
+				int currErrorLen = _tcslen(errorText);
+				_tcsncat(errorText, PQerrorMessage(pConn->handle), (currErrorLen < DBDRV_MAX_ERROR_TEXT) ? (DBDRV_MAX_ERROR_TEXT - currErrorLen) : 0);
+
+				// Proceed while `isBusy` is freed
+				while (PQisBusy(pConn->handle) > 0)
+				{
+					PQflush(pConn->handle);
+					PQconsumeInput(pConn->handle);
+				}
 			}
+
 			*pdwError = (PQstatus(pConn->handle) == CONNECTION_BAD) ? DBERR_CONNECTION_LOST : DBERR_OTHER_ERROR;
 		}
 	}
@@ -1115,6 +1148,9 @@ extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectPreparedUnbuffered(PG_CONN *p
 			if (errorText != NULL)
 			{
 				_tcsncpy(errorText, _T("Internal error (call to PQsendQueryPrepared failed)"), DBDRV_MAX_ERROR_TEXT);
+
+				int currErrorLen = _tcslen(errorText);
+				_tcsncat(errorText, PQerrorMessage(pConn->handle), (currErrorLen < DBDRV_MAX_ERROR_TEXT) ? (DBDRV_MAX_ERROR_TEXT - currErrorLen) : 0);
 			}
 			*pdwError = (PQstatus(pConn->handle) == CONNECTION_BAD) ? DBERR_CONNECTION_LOST : DBERR_OTHER_ERROR;
 		}
