@@ -103,6 +103,22 @@ NXSL_LibraryScript *NXSL_Library::findScript(UINT32 id)
 }
 
 /**
+ * Find script object by GUID
+ */
+NXSL_LibraryScript *NXSL_Library::findScript(uuid guid)
+{
+	for (int i = 0; i < m_scriptList->size(); i++)
+	{
+		if (m_scriptList->get(i)->getGuid().equals(guid))
+		{
+			return m_scriptList->get(i);
+		}
+	}
+
+	return NULL;
+}
+
+/**
  * Create ready to run VM for given script. This method will do library lock internally.
  * VM must be deleted by caller when no longer needed.
  */

@@ -708,6 +708,7 @@ public:
    void deleteScript(UINT32 id);
    NXSL_Program *findNxslProgram(const TCHAR *name);
    NXSL_LibraryScript *findScript(UINT32 id);
+   NXSL_LibraryScript *findScript(uuid guid);
    NXSL_VM *createVM(const TCHAR *name, NXSL_Environment *env);
 
    void fillMessage(NXCPMessage *msg);
