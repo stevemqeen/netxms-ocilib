@@ -136,6 +136,8 @@ void LIBNXDB_EXPORTABLE DBEnableReconnect(DB_HANDLE hConn, bool enabled);
 bool LIBNXDB_EXPORTABLE DBSetPrefetchLimit(DB_HANDLE hConn, int limit);
 void LIBNXDB_EXPORTABLE DBSetSessionInitCallback(void (*cb)(DB_HANDLE));
 bool LIBNXDB_EXPORTABLE DBCheckConnection(DB_HANDLE hConn, const TCHAR *szQuery);
+bool LIBNXDB_EXPORTABLE DBReconnect(DB_HANDLE hConn);
+bool LIBNXDB_EXPORTABLE DBReconnectEx(DB_HANDLE hConn);
 
 DB_STATEMENT LIBNXDB_EXPORTABLE DBPrepare(DB_HANDLE hConn, const TCHAR *szQuery);
 DB_STATEMENT LIBNXDB_EXPORTABLE DBPrepareEx(DB_HANDLE hConn, const TCHAR *szQuery, TCHAR *errorText);

@@ -236,7 +236,13 @@ extern "C" DBDRV_CONNECTION EXPORT DrvConnect(const char *szHost, const char *sz
 	if (pConn != NULL)
 	{
 		// should be replaced with PQconnectdb();
-		pConn->handle = PQsetdbLogin(szServerAddr, strlen(szServerPort) > 0 ? szServerPort : NULL, NULL, NULL, szDatabase, szLogin, szPassword);
+		char szConnInfo[2048] = { 0 };
+		sprintf(szConnInfo, "host=%s port=%s dbname=%s user=%s password=%s connect_timeout=5",
+			szServerAddr, strlen(szServerPort) > 0 ? szServerPort : "5432",
+			szDatabase, szLogin, szPassword);
+
+		pConn->handle = PQconnectdb(szConnInfo);
+		//pConn->handle = PQsetdbLogin(szServerAddr, strlen(szServerPort) > 0 ? szServerPort : NULL, NULL, NULL, szDatabase, szLogin, szPassword);
 
 		if (PQstatus(pConn->handle) == CONNECTION_BAD)
 		{

@@ -182,9 +182,63 @@ bool LIBNXDB_EXPORTABLE DBCheckConnection(DB_HANDLE hConn, const TCHAR *szQuery)
 }
 
 /**
+ * Reconnect to database extended
+ */
+bool LIBNXDB_EXPORTABLE DBReconnectEx(DB_HANDLE hConn)
+{
+	bool result = false;
+	TCHAR errorText[DBDRV_MAX_ERROR_TEXT] = { 0 };
+
+	nxlog_debug(4, _T("DB reconnect: handle=%p"), hConn);
+
+	InvalidatePreparedStatements(hConn);
+	hConn->m_driver->m_fpDrvDisconnect(hConn->m_connection);
+
+	hConn->m_connection = hConn->m_driver->m_fpDrvConnect(hConn->m_server,
+		hConn->m_login, hConn->m_password, hConn->m_dbName, hConn->m_schema, errorText);
+
+	if (hConn->m_connection != NULL)
+	{
+		if (hConn->m_driver->m_fpDrvSetPrefetchLimit != NULL)
+		{
+			hConn->m_driver->m_fpDrvSetPrefetchLimit(hConn->m_connection, hConn->m_driver->m_defaultPrefetchLimit);
+		}
+		
+		if (s_sessionInitCb != NULL)
+		{
+			s_sessionInitCb(hConn);
+		}
+
+		if (hConn->m_driver->m_reconnect > 0)
+		{
+			MutexLock(hConn->m_driver->m_mutexReconnect);
+			hConn->m_driver->m_reconnect--;
+			if ((hConn->m_driver->m_reconnect == 0) && (hConn->m_driver->m_fpEventHandler != NULL))
+			{
+				hConn->m_driver->m_fpEventHandler(DBEVENT_CONNECTION_RESTORED, NULL, NULL, false, hConn->m_driver->m_userArg);
+			}
+			MutexUnlock(hConn->m_driver->m_mutexReconnect);
+		}
+
+		return true;
+	}
+
+	MutexLock(hConn->m_driver->m_mutexReconnect);
+	if ((hConn->m_driver->m_reconnect == 0) && (hConn->m_driver->m_fpEventHandler != NULL))
+	{
+		hConn->m_driver->m_fpEventHandler(DBEVENT_CONNECTION_LOST, NULL, NULL, true, hConn->m_driver->m_userArg);
+	}
+
+	hConn->m_driver->m_reconnect++;
+	MutexUnlock(hConn->m_driver->m_mutexReconnect);
+
+	return result;
+}
+
+/**
  * Reconnect to database
  */
-static bool DBReconnect(DB_HANDLE hConn)
+bool LIBNXDB_EXPORTABLE DBReconnect(DB_HANDLE hConn)
 {
    bool result = false;
    int nCount;
