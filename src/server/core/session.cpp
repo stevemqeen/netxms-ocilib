@@ -10157,7 +10157,7 @@ void ClientSession::addCACertificate(NXCPMessage *pRequest)
 				pszEscSubject = EncodeSQLString(wname);
 				free(wname);
 #else
-				pszEscSubject = EncodeSQLString(CHECK_NULL(pCert->name));
+				pszEscSubject = EncodeSQLString(CHECK_NULL(subjectName));
 #endif
 				X509_free(pCert);
 				pszComments = pRequest->getFieldAsString(VID_COMMENTS);
