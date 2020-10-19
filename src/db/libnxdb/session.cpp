@@ -22,6 +22,7 @@
 **/
 
 #include "libnxdb.h"
+#include <ndebug.h>
 
 /**
  * Check if statement handle is valid
@@ -108,6 +109,7 @@ DB_HANDLE LIBNXDB_EXPORTABLE DBConnect(DB_DRIVER driver, const TCHAR *server, co
          if (driver->m_fpDrvSetPrefetchLimit != NULL)
             driver->m_fpDrvSetPrefetchLimit(hDrvConn, driver->m_defaultPrefetchLimit);
 		   nxlog_debug(4, _T("New DB connection opened: handle=%p"), hConn);
+		   TP_LOG(log_info, "New DB connection opened: handle=%p", hConn);
          if (s_sessionInitCb != NULL)
             s_sessionInitCb(hConn);
       }
@@ -245,6 +247,7 @@ bool LIBNXDB_EXPORTABLE DBReconnect(DB_HANDLE hConn)
 	TCHAR errorText[DBDRV_MAX_ERROR_TEXT];
 
    nxlog_debug(4, _T("DB reconnect: handle=%p"), hConn);
+   TP_LOG(log_info, "DB reconnect: handle=%p", hConn);
 
    InvalidatePreparedStatements(hConn);
 	hConn->m_driver->m_fpDrvDisconnect(hConn->m_connection);
@@ -274,6 +277,7 @@ bool LIBNXDB_EXPORTABLE DBReconnect(DB_HANDLE hConn)
       if (g_isReconnectAborted)
       {
          nxlog_debug(4, _T("DB reconnect: aborted"));
+	 TP_LOG(log_info, "DB reconnect: aborted");
          break;
       }
       ThreadSleepMs(1000);
@@ -332,6 +336,8 @@ bool LIBNXDB_EXPORTABLE DBQueryEx(DB_HANDLE hConn, const TCHAR *szQuery, TCHAR *
    dwResult = hConn->m_driver->m_fpDrvQuery(hConn->m_connection, szQuery, errorText);
    if ((dwResult == DBERR_CONNECTION_LOST) && hConn->m_reconnectEnabled)
    {
+      TP_LOG(log_debug, "DBQueryEx(): connection lost, trying reconnect.");
+
       if (DBReconnect(hConn))
          dwResult = hConn->m_driver->m_fpDrvQuery(hConn->m_connection, szQuery, errorText);
    }
@@ -391,6 +397,8 @@ DB_RESULT LIBNXDB_EXPORTABLE DBSelectEx(DB_HANDLE hConn, const TCHAR *szQuery, T
    hResult = hConn->m_driver->m_fpDrvSelect(hConn->m_connection, szQuery, &dwError, errorText);
    if ((hResult == NULL) && (dwError == DBERR_CONNECTION_LOST) && hConn->m_reconnectEnabled)
    {
+      TP_LOG(log_debug, "DBQueryEx(): connection lost, trying reconnect.");
+
       if (DBReconnect(hConn))
          hResult = hConn->m_driver->m_fpDrvSelect(hConn->m_connection, szQuery, &dwError, errorText);
    }
@@ -845,6 +853,8 @@ DB_UNBUFFERED_RESULT LIBNXDB_EXPORTABLE DBSelectUnbufferedEx(DB_HANDLE hConn, co
 	hResult = hConn->m_driver->m_fpDrvSelectUnbuffered(hConn->m_connection, szQuery, &dwError, errorText, mode);
 	if ((hResult == NULL) && (dwError == DBERR_CONNECTION_LOST) && hConn->m_reconnectEnabled)
 	{
+		TP_LOG(log_debug, "DBQueryEx(): connection lost, trying reconnect.");
+
 		if (DBReconnect(hConn))
 		{
 			hResult = hConn->m_driver->m_fpDrvSelectUnbuffered(hConn->m_connection, szQuery, &dwError, errorText, mode);
@@ -1182,6 +1192,8 @@ DB_STATEMENT LIBNXDB_EXPORTABLE DBPrepareEx(DB_HANDLE hConn, const TCHAR *query,
 	DBDRV_STATEMENT stmt = hConn->m_driver->m_fpDrvPrepare(hConn->m_connection, query, &errorCode, errorText);
    if ((stmt == NULL) && (errorCode == DBERR_CONNECTION_LOST) && hConn->m_reconnectEnabled)
    {
+      TP_LOG(log_debug, "DBQueryEx(): connection lost, trying reconnect.");
+
       if (DBReconnect(hConn))
          stmt = hConn->m_driver->m_fpDrvPrepare(hConn->m_connection, query, &errorCode, errorText);
 	}
@@ -1468,6 +1480,7 @@ bool LIBNXDB_EXPORTABLE DBExecuteEx(DB_STATEMENT hStmt, TCHAR *errorText)
    // because it will fail anyway
    if ((dwResult == DBERR_CONNECTION_LOST) && hConn->m_reconnectEnabled)
    {
+      TP_LOG(log_debug, "DBQueryEx(): connection lost, trying reconnect.");
       DBReconnect(hConn);
    }
    
@@ -1536,6 +1549,7 @@ DB_RESULT LIBNXDB_EXPORTABLE DBSelectPreparedEx(DB_STATEMENT hStmt, TCHAR *error
    // because it will fail anyway
    if ((hResult == NULL) && (dwError == DBERR_CONNECTION_LOST) && hConn->m_reconnectEnabled)
    {
+      TP_LOG(log_debug, "DBQueryEx(): connection lost, trying reconnect.");
       DBReconnect(hConn);
    }
 
@@ -1612,6 +1626,7 @@ DB_UNBUFFERED_RESULT LIBNXDB_EXPORTABLE DBSelectPreparedUnbufferedEx(DB_STATEMEN
    // because it will fail anyway
    if ((hResult == NULL) && (dwError == DBERR_CONNECTION_LOST) && hConn->m_reconnectEnabled)
    {
+      TP_LOG(log_debug, "DBQueryEx(): connection lost, trying reconnect.");
       DBReconnect(hConn);
    }
 
@@ -1662,6 +1677,7 @@ bool LIBNXDB_EXPORTABLE DBBegin(DB_HANDLE hConn)
       dwResult = hConn->m_driver->m_fpDrvBegin(hConn->m_connection);
       if ((dwResult == DBERR_CONNECTION_LOST) && hConn->m_reconnectEnabled)
       {
+         TP_LOG(log_debug, "DBQueryEx(): connection lost, trying reconnect.");
          if (DBReconnect(hConn))
             dwResult = hConn->m_driver->m_fpDrvBegin(hConn->m_connection);
       }
