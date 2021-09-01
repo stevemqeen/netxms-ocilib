@@ -125,7 +125,7 @@ static NXSL_ExtFunction m_builtinFunctions[] =
    { _T("rindex"), F_rindex, -1 },
    { _T("round"), F_round, -1 },
 	{ _T("rtrim"), F_rtrim, 1 },
-	{ _T("sha1"), F_sha1, 1 },
+	{ _T("sha1"), F_sha1, -1 },
 	{ _T("sha256"), F_sha256, 1 },
 	{ _T("sleep"), F_sleep, 1 },
 	{ _T("strftime"), F_strftime, -1 },

@@ -1262,18 +1262,126 @@ int F_sha1(int argc, NXSL_Value **argv, NXSL_Value **ppResult, NXSL_VM *vm)
 	if (!argv[0]->isString())
 		return NXSL_ERR_NOT_STRING;
 
-   BYTE hash[SHA1_DIGEST_SIZE];
-#ifdef UNICODE
-   char *utf8Str = UTF8StringFromWideString(argv[0]->getValueAsCString());
-   CalculateSHA1Hash((BYTE *)utf8Str, strlen(utf8Str), hash);
-#else
-   const char *str = argv[0]->getValueAsCString();
-   CalculateSHA1Hash((BYTE *)str, strlen(str), hash);
-#endif
+	int newline_return = 1; // by default this is enabled
 
-   TCHAR text[SHA1_DIGEST_SIZE * 2 + 1];
-   BinToStr(hash, SHA1_DIGEST_SIZE, text);
-   *ppResult = new NXSL_Value(text);
+	if (argc == 2)
+	{
+		if (!argv[1]->isNull())
+		{
+			if (argv[1]->isInteger())
+			{
+				newline_return = argv[1]->getValueAsInt32();
+			}
+			else
+			{
+				return NXSL_ERR_NOT_INTEGER;
+			}
+		}
+		else
+		{
+			return NXSL_ERR_NULL_VALUE;
+		}
+	}
+
+	BYTE hash[SHA1_DIGEST_SIZE] = { 0 };
+
+	// Convert LF to CRLF
+	switch (newline_return)
+	{
+		case 0:
+		default: // Do not convert string, use as is
+			{
+#ifdef UNICODE
+				char *utf8Str = UTF8StringFromWideString(argv[0]->getValueAsCString());
+				CalculateSHA1Hash((BYTE *)utf8Str, strlen(utf8Str), hash);
+				safe_free(utf8Str);
+#else
+				const char *str = argv[0]->getValueAsCString();
+				CalculateSHA1Hash((BYTE *)str, strlen(str), hash);
+#endif
+			}
+			break;
+		case 1: // Convert UNIX line ending (\n) into DOS(WINDOWS) format (\r\n)
+			{
+				const char *input = argv[0]->getValueAsCString();
+				int input_size = strlen(input);
+				int simbol_count = 0;
+
+				for (int i = 0; i < input_size; i++)
+				{
+					if (input[i] == '\n')
+					{
+						simbol_count++;
+					}
+				}
+
+				int new_input_size = input_size + simbol_count + 1;
+				char *new_input = (char*)malloc(new_input_size);
+				memset(new_input, 0, new_input_size);
+				int pos = 0;
+
+				for (int i = 0; i < input_size; i++)
+				{
+					if (i > 0)
+					{
+						if (input[i] == '\n' && input[i - 1] != '\r')
+						{
+							new_input[pos++] = '\r';
+							new_input[pos++] = '\n';
+						}
+						else
+						{
+							new_input[pos++] = input[i];
+						}
+					}
+					else if (i == 0 && input[i] == '\n')
+					{
+						new_input[pos++] = '\r';
+						new_input[pos++] = '\n';
+					}
+					else
+					{
+						new_input[pos++] = input[i];
+					}
+				}
+				new_input[pos] = '\0';
+
+				CalculateSHA1Hash((BYTE *)new_input, strlen(new_input), hash);
+				safe_free(new_input);
+			}
+			break;
+		case 2:	// Strip all line endings, with or without carriage return
+			{
+				const char *input = argv[0]->getValueAsCString();
+				int input_size = strlen(input);
+
+				int new_input_size = input_size + 1;
+				char *new_input = (char*)malloc(new_input_size);
+				memset(new_input, 0, new_input_size);
+				int pos = 0;
+
+				for (int i = 0; i < input_size; i++)
+				{
+					if (input[i] == '\n' || input[i] == '\r')
+					{
+						continue;
+					}
+					else
+					{
+						new_input[pos++] = input[i];
+					}
+				}
+				new_input[pos] = '\0';
+
+				CalculateSHA1Hash((BYTE *)new_input, strlen(new_input), hash);
+				safe_free(new_input);
+			}
+			break;
+	}
+
+	TCHAR text[SHA1_DIGEST_SIZE * 2 + 1];
+	BinToStr(hash, SHA1_DIGEST_SIZE, text);
+	*ppResult = new NXSL_Value(text);
 
 	return 0;
 }
