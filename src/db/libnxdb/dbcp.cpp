@@ -22,6 +22,7 @@
 **/
 
 #include "libnxdb.h"
+#include <ndebug.h>
 
 static bool s_initialized = false;
 static DB_DRIVER m_driver;
@@ -69,6 +70,7 @@ static bool DBConnectionPoolPopulate()
       else
       {
          nxlog_debug(3, _T("Database Connection Pool: cannot create DB connection %d (%s)"), i, errorText);
+	 TP_LOG(log_warn, "Database Connection Pool: cannot create DB connection %d (%s)", i, errorText);
          delete conn;
       }
 	}
@@ -115,11 +117,13 @@ static bool ResetConnection(PoolConnectionInfo *conn)
 		conn->usageCount = 0;
 
 		nxlog_debug(3, _T("Database Connection Pool: connection %p reconnected"), conn->handle);
+		TP_LOG(log_warn, "Database Connection Pool: connection %p reconnected", conn->handle);
 		return true;
 	}
    else
    {
 		nxlog_debug(3, _T("Database Connection Pool: connection %p reconnect failure (%s)"), conn->handle, errorText);
+		TP_LOG(log_warn, "Database Connection Pool: connection %p reconnect failure (%s)", conn->handle, errorText);
 		return false;
 	}
 }
@@ -193,6 +197,7 @@ static void ResetExpiredConnections()
 static THREAD_RESULT THREAD_CALL MaintenanceThread(void *arg)
 {
 	nxlog_debug(1, _T("Database Connection Pool maintenance thread started"));
+	TP_LOG(log_always, "Database Connection Pool maintenance thread started");
 
    while(!ConditionWait(m_condShutdown, (m_connectionTTL > 0) ? m_connectionTTL * 750 : 300000))
    {
@@ -203,6 +208,7 @@ static THREAD_RESULT THREAD_CALL MaintenanceThread(void *arg)
       }
    }
 
+	TP_LOG(log_always, "Database Connection Pool maintenance thread stopped");
 	nxlog_debug(1, _T("Database Connection Pool maintenance thread stopped"));
    return THREAD_OK;
 }
@@ -247,6 +253,7 @@ bool LIBNXDB_EXPORTABLE DBConnectionPoolStartup(DB_DRIVER driver, const TCHAR *s
    m_maintThread = ThreadCreateEx(MaintenanceThread, 0, NULL);
 
    s_initialized = true;
+	TP_LOG(log_always, "Database Connection Pool initialized");
 	nxlog_debug(1, _T("Database Connection Pool initialized"));
 
 	return true;
@@ -276,6 +283,7 @@ void LIBNXDB_EXPORTABLE DBConnectionPoolShutdown()
 
    s_initialized = false;
 	nxlog_debug(1, _T("Database Connection Pool terminated"));
+	TP_LOG(log_always, "Database Connection Pool terminated");
 
 }
 
@@ -331,6 +339,7 @@ retry:
       }
       else
       {
+         TP_LOG(log_warn, "Database Connection Pool: cannot create additional DB connection (%s)", errorText);
          nxlog_debug(3, _T("Database Connection Pool: cannot create additional DB connection (%s)"), errorText);
          delete conn;
       }
@@ -340,13 +349,17 @@ retry:
 
 	if (handle == NULL)
 	{
+		TP_LOG(log_always, "Database Connection Pool exhausted (call from %hs:%d)", srcFile, srcLine);
    	nxlog_debug(1, _T("Database Connection Pool exhausted (call from %hs:%d)"), srcFile, srcLine);
       ConditionWait(m_condRelease, 10000);
       nxlog_debug(5, _T("Database Connection Pool: retry acquire connection (call from %hs:%d)"), srcFile, srcLine);
+      TP_LOG(log_debug, "Database Connection Pool: retry acquire connection (call from %hs:%d)", srcFile, srcLine);
       goto retry;
 	}
 
+
    nxlog_debug(7, _T("Database Connection Pool: handle %p acquired (call from %hs:%d)"), handle, srcFile, srcLine);
+   TP_LOG(log_dump, "Database Connection Pool: handle %p acquired (call from %hs:%d)", handle, srcFile, srcLine);
 	return handle;
 }
 
@@ -373,6 +386,7 @@ void LIBNXDB_EXPORTABLE DBConnectionPoolReleaseConnection(DB_HANDLE handle)
 	MutexUnlock(m_poolAccessMutex);
 
    nxlog_debug(7, _T("Database Connection Pool: handle %p released"), handle);
+   TP_LOG(log_dump, "Database Connection Pool: handle %p released", handle);
    ConditionPulse(m_condRelease);
 }
 
