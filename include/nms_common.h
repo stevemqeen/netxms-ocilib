@@ -1199,10 +1199,10 @@ typedef struct tagICMPHDR
  * Free memory block if it isn't NULL
  */
 #if FREE_IS_NULL_SAFE
-#define safe_free(x) free(x);
-#define safe_free_and_null(x) { free(x); x = NULL; }
+#define safe_free(x) { if ((x) != NULL) { free(x); x = NULL; } }
+#define safe_free_and_null(x) { if ((x) != NULL) { free(x); x = NULL; } }
 #else
-#define safe_free(x) { if ((x) != NULL) free(x); }
+#define safe_free(x) { if ((x) != NULL) { free(x); x = NULL; } }
 #define safe_free_and_null(x) { if ((x) != NULL) { free(x); x = NULL; } }
 #endif
 
@@ -1221,7 +1221,7 @@ inline void nx_free(void *p)
 /**
  * delete object and nullify pointer
  */
-#define delete_and_null(x) { delete x; x = NULL; }
+#define delete_and_null(x) { if ((x) != NULL) { delete x; x = NULL; } }
 
 /**
  * Convert half-byte's value to hex digit and vice versa
