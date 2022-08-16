@@ -197,7 +197,8 @@ extern "C" void EXPORT DrvUnload()
  * pszHost should be set to DB2 source name, and pszDatabase is ignored
  */
 extern "C" DBDRV_CONNECTION EXPORT DrvConnect(char *pszHost, char *pszLogin,
-                                              char *pszPassword, char *pszDatabase, const char *schema, NETXMS_WCHAR *errorText)
+                                              char *pszPassword, char *pszDatabase, const char *schema,
+											  const char *addConnectStr, int sendRetryCount, NETXMS_WCHAR *errorText)
 {
 	long iResult;
 	DB2DRV_CONN *pConn;

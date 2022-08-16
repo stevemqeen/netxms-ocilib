@@ -207,7 +207,7 @@ extern "C" void EXPORT DrvUnload()
  * Connect to database
  */
 extern "C" DBDRV_CONNECTION EXPORT DrvConnect(const char *szHost, const char *szLogin, const char *szPassword, 
-	 const char *szDatabase, const char *schema, TCHAR *errorText)
+	 										  const char *szDatabase, const char *schema, const char *addConnectStr, int sendRetryCount, TCHAR *errorText)
 {
 	PG_CONN *pConn;
 	char *delim = NULL;
@@ -235,11 +235,17 @@ extern "C" DBDRV_CONNECTION EXPORT DrvConnect(const char *szHost, const char *sz
 	
 	if (pConn != NULL)
 	{
+		if (sendRetryCount < 0)
+		{
+			sendRetryCount = 10;
+		}
+		pConn->sendRetryCount = sendRetryCount;
+
 		// should be replaced with PQconnectdb();
 		char szConnInfo[2048] = { 0 };
-		sprintf(szConnInfo, "host=%s port=%s dbname=%s user=%s password=%s connect_timeout=5",
+		sprintf(szConnInfo, "host=%s port=%s dbname=%s user=%s password=%s connect_timeout=5 %s",
 			szServerAddr, strlen(szServerPort) > 0 ? szServerPort : "5432",
-			szDatabase, szLogin, szPassword);
+			szDatabase, szLogin, szPassword, CHECK_NULL_EX(addConnectStr));
 
 		pConn->handle = PQconnectdb(szConnInfo);
 		//pConn->handle = PQsetdbLogin(szServerAddr, strlen(szServerPort) > 0 ? szServerPort : NULL, NULL, NULL, szDatabase, szLogin, szPassword);
@@ -483,7 +489,7 @@ extern "C" DWORD EXPORT DrvExecute(PG_CONN *pConn, PG_STATEMENT *hStmt, TCHAR *e
 
 	MutexLock(pConn->mutexQueryLock);
 	bool retry;
-	int retryCount = 60;
+	int retryCount = pConn->sendRetryCount;
 	do
 	{
 		retry = false;
@@ -504,7 +510,7 @@ extern "C" DWORD EXPORT DrvExecute(PG_CONN *pConn, PG_STATEMENT *hStmt, TCHAR *e
 				if ((PQstatus(pConn->handle) != CONNECTION_BAD) &&
 					(sqlState != NULL) && (!strcmp(sqlState, "53000") || !strcmp(sqlState, "53200")) && (retryCount > 0))
 				{
-					ThreadSleep(500);
+					ThreadSleep(1);
 					retry = true;
 					retryCount--;
 				}
@@ -573,7 +579,7 @@ extern "C" void EXPORT DrvFreeStatement(PG_STATEMENT *hStmt)
  */
 static bool UnsafeDrvQuery(PG_CONN *pConn, const char *szQuery, TCHAR *errorText)
 {
-	int retryCount = 60;
+	int retryCount = pConn->sendRetryCount;
 
 retry:
 	PGresult *pResult = PQexec(pConn->handle, szQuery);
@@ -593,7 +599,7 @@ retry:
 		if ((PQstatus(pConn->handle) != CONNECTION_BAD) &&
 			(sqlState != NULL) && (!strcmp(sqlState, "53000") || !strcmp(sqlState, "53200")) && (retryCount > 0))
 		{
-			ThreadSleep(500);
+			ThreadSleep(1);
 			retryCount--;
 			PQclear(pResult);
 			goto retry;
@@ -654,7 +660,7 @@ extern "C" DWORD EXPORT DrvQuery(PG_CONN *pConn, TCHAR *pwszQuery, TCHAR *errorT
  */
 static DBDRV_RESULT UnsafeDrvSelect(PG_CONN *pConn, const char *szQuery, TCHAR *errorText)
 {
-	int retryCount = 60;
+	int retryCount = pConn->sendRetryCount;
 
 retry:
 	PGresult *pResult = PQexec(((PG_CONN *)pConn)->handle, szQuery);
@@ -675,7 +681,7 @@ retry:
 		if ((PQstatus(pConn->handle) != CONNECTION_BAD) &&
 			(sqlState != NULL) && (!strcmp(sqlState, "53000") || !strcmp(sqlState, "53200")) && (retryCount > 0))
 		{
-			ThreadSleep(500);
+			ThreadSleep(1);
 			retryCount--;
 			PQclear(pResult);
 			goto retry;
@@ -739,7 +745,7 @@ extern "C" DBDRV_RESULT EXPORT DrvSelectPrepared(PG_CONN *pConn, PG_STATEMENT *h
 {
 	PGresult *pResult = NULL;
 	bool retry;
-	int retryCount = 60;
+	int retryCount = pConn->sendRetryCount;
 
 	MutexLock(pConn->mutexQueryLock);
 	do
@@ -763,7 +769,7 @@ extern "C" DBDRV_RESULT EXPORT DrvSelectPrepared(PG_CONN *pConn, PG_STATEMENT *h
 				if ((PQstatus(pConn->handle) != CONNECTION_BAD) &&
 					(sqlState != NULL) && (!strcmp(sqlState, "53000") || !strcmp(sqlState, "53200")) && (retryCount > 0))
 				{
-					ThreadSleep(500);
+					ThreadSleep(1);
 					retry = true;
 					retryCount--;
 				}
@@ -932,7 +938,7 @@ extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectUnbuffered(PG_CONN *pConn, TC
 
 	bool success = false;
 	bool retry;
-	int retryCount = 60;
+	int retryCount = pConn->sendRetryCount;
 	char *queryUTF8 = _tcsdup(pwszQuery);
 	
 	do
@@ -973,7 +979,7 @@ extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectUnbuffered(PG_CONN *pConn, TC
 					if ((PQstatus(pConn->handle) != CONNECTION_BAD) &&
 						(sqlState != NULL) && (!strcmp(sqlState, "53000") || !strcmp(sqlState, "53200")) && (retryCount > 0))
 					{
-						ThreadSleep(500);
+						ThreadSleep(1);
 						retry = true;
 						retryCount--;
 					}
@@ -1078,7 +1084,7 @@ extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectPreparedUnbuffered(PG_CONN *p
 
 	bool success = false;
 	bool retry;
-	int retryCount = 60;
+	int retryCount = pConn->sendRetryCount;
 	do
 	{
 		retry = false;
@@ -1115,7 +1121,7 @@ extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectPreparedUnbuffered(PG_CONN *p
 					if ((PQstatus(pConn->handle) != CONNECTION_BAD) &&
 						(sqlState != NULL) && (!strcmp(sqlState, "53000") || !strcmp(sqlState, "53200")) && (retryCount > 0))
 					{
-						ThreadSleep(500);
+						ThreadSleep(1);
 						retry = true;
 						retryCount--;
 					}

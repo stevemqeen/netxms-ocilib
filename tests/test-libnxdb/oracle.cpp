@@ -19,7 +19,7 @@ void TestOracleBatch()
    AssertNotNull(drv);
 
    TCHAR buffer[DBDRV_MAX_ERROR_TEXT];
-   DB_HANDLE session = DBConnect(drv, ORA_SERVER, NULL, ORA_LOGIN, ORA_PASSWORD, NULL, buffer);
+   DB_HANDLE session = DBConnect(drv, ORA_SERVER, NULL, ORA_LOGIN, ORA_PASSWORD, NULL, NULL, -1, buffer);
    AssertNotNull(session);
 
    EndTest();

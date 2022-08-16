@@ -130,7 +130,7 @@ const char LIBNXDB_EXPORTABLE *DBGetDriverName(DB_DRIVER driver);
 void LIBNXDB_EXPORTABLE DBSetDefaultPrefetchLimit(DB_DRIVER driver, int limit);
 
 DB_HANDLE LIBNXDB_EXPORTABLE DBConnect(DB_DRIVER driver, const TCHAR *server, const TCHAR *dbName,
-                                       const TCHAR *login, const TCHAR *password, const TCHAR *schema, TCHAR *errorText);
+                                       const TCHAR *login, const TCHAR *password, const TCHAR *schema, const TCHAR *addConnectStr, int sendRetryCount, TCHAR *errorText);
 void LIBNXDB_EXPORTABLE DBDisconnect(DB_HANDLE hConn);
 void LIBNXDB_EXPORTABLE DBEnableReconnect(DB_HANDLE hConn, bool enabled);
 bool LIBNXDB_EXPORTABLE DBSetPrefetchLimit(DB_HANDLE hConn, int limit);
@@ -230,7 +230,7 @@ TCHAR LIBNXDB_EXPORTABLE *EncodeSQLString(const TCHAR *pszIn);
 void LIBNXDB_EXPORTABLE DecodeSQLString(TCHAR *pszStr);
 
 bool LIBNXDB_EXPORTABLE DBConnectionPoolStartup(DB_DRIVER driver, const TCHAR *server, const TCHAR *dbName,
-																const TCHAR *login, const TCHAR *password, const TCHAR *schema,
+																const TCHAR *login, const TCHAR *password, const TCHAR *schema, const TCHAR *addConnectStr, int sendRetryCount,
 																int basePoolSize, int maxPoolSize, int cooldownTime,
 																int connTTL);
 void LIBNXDB_EXPORTABLE DBConnectionPoolShutdown();

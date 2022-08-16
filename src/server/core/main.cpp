@@ -695,7 +695,7 @@ BOOL NXCORE_EXPORTABLE Initialize()
 	TCHAR errorText[DBDRV_MAX_ERROR_TEXT];
 	for(int i = 0; ; i++)
 	{
-	   hdbBootstrap = DBConnect(g_dbDriver, g_szDbServer, g_szDbName, g_szDbLogin, g_szDbPassword, g_szDbSchema, errorText);
+	   hdbBootstrap = DBConnect(g_dbDriver, g_szDbServer, g_szDbName, g_szDbLogin, g_szDbPassword, g_szDbSchema, NULL, -1, errorText);
 		if ((hdbBootstrap != NULL) || (i == 5))
 			break;
 		ThreadSleep(5);
@@ -730,7 +730,7 @@ BOOL NXCORE_EXPORTABLE Initialize()
 
    DBDisconnect(hdbBootstrap);
 
-	if (!DBConnectionPoolStartup(g_dbDriver, g_szDbServer, g_szDbName, g_szDbLogin, g_szDbPassword, g_szDbSchema, baseSize, maxSize, cooldownTime, ttl))
+	if (!DBConnectionPoolStartup(g_dbDriver, g_szDbServer, g_szDbName, g_szDbLogin, g_szDbPassword, g_szDbSchema, NULL, -1, baseSize, maxSize, cooldownTime, ttl))
 	{
       nxlog_write(MSG_DBCONNPOOL_INIT_FAILED, EVENTLOG_ERROR_TYPE, NULL);
 	   return FALSE;
