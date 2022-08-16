@@ -62,7 +62,8 @@ static void InvalidatePreparedStatements(DB_HANDLE hConn)
  * Connect to database
  */
 DB_HANDLE LIBNXDB_EXPORTABLE DBConnect(DB_DRIVER driver, const TCHAR *server, const TCHAR *dbName,
-                                       const TCHAR *login, const TCHAR *password, const TCHAR *schema, TCHAR *errorText)
+                                       const TCHAR *login, const TCHAR *password, const TCHAR *schema,
+                                       const TCHAR *addConnectStr, int sendRetryCount, TCHAR *errorText)
 {
    DBDRV_CONNECTION hDrvConn;
    DB_HANDLE hConn = NULL;
@@ -74,11 +75,12 @@ DB_HANDLE LIBNXDB_EXPORTABLE DBConnect(DB_DRIVER driver, const TCHAR *server, co
 	char *mbLogin = (login == NULL) ? NULL : MBStringFromWideString(login);
 	char *mbPassword = (password == NULL) ? NULL : MBStringFromWideString(password);
 	char *mbSchema = (schema == NULL) ? NULL : MBStringFromWideString(schema);
+	char *mbAddConnectStr = (addConnectStr == NULL) ? NULL : MBStringFromWideString(addConnectStr);
 	errorText[0] = 0;
-   hDrvConn = driver->m_fpDrvConnect(mbServer, mbLogin, mbPassword, mbDatabase, mbSchema, errorText);
+   hDrvConn = driver->m_fpDrvConnect(mbServer, mbLogin, mbPassword, mbDatabase, mbSchema, mbAddConnectStr, sendRetryCount, errorText);
 #else
 	TCHAR wcErrorText[DBDRV_MAX_ERROR_TEXT] = "";
-   hDrvConn = driver->m_fpDrvConnect(server, login, password, dbName, schema, wcErrorText);
+   hDrvConn = driver->m_fpDrvConnect(server, login, password, dbName, schema, addConnectStr, sendRetryCount, wcErrorText);
 	errorText[DBDRV_MAX_ERROR_TEXT - 1] = 0;
 #endif
    if (hDrvConn != NULL)
@@ -99,12 +101,16 @@ DB_HANDLE LIBNXDB_EXPORTABLE DBConnect(DB_DRIVER driver, const TCHAR *server, co
          hConn->m_password = mbPassword;
          hConn->m_server = mbServer;
          hConn->m_schema = mbSchema;
+         hConn->m_addConnectStr = mbAddConnectStr;
+         hConn->m_sendRetryCount = sendRetryCount;
 #else
          hConn->m_dbName = (dbName == NULL) ? NULL : _tcsdup(dbName);
          hConn->m_login = (login == NULL) ? NULL : _tcsdup(login);
          hConn->m_password = (password == NULL) ? NULL : _tcsdup(password);
          hConn->m_server = (server == NULL) ? NULL : _tcsdup(server);
          hConn->m_schema = (schema == NULL) ? NULL : _tcsdup(schema);
+         hConn->m_addConnectStr = (addConnectStr == NULL) ? NULL : _tcsdup(addConnectStr);
+         hConn->m_sendRetryCount = sendRetryCount;
 #endif
          if (driver->m_fpDrvSetPrefetchLimit != NULL)
             driver->m_fpDrvSetPrefetchLimit(hDrvConn, driver->m_defaultPrefetchLimit);
@@ -150,6 +156,7 @@ void LIBNXDB_EXPORTABLE DBDisconnect(DB_HANDLE hConn)
    safe_free(hConn->m_password);
    safe_free(hConn->m_server);
    safe_free(hConn->m_schema);
+   safe_free(hConn->m_addConnectStr);
    delete hConn->m_preparedStatements;
    free(hConn);
 }
@@ -197,7 +204,7 @@ bool LIBNXDB_EXPORTABLE DBReconnectEx(DB_HANDLE hConn)
 	hConn->m_driver->m_fpDrvDisconnect(hConn->m_connection);
 
 	hConn->m_connection = hConn->m_driver->m_fpDrvConnect(hConn->m_server,
-		hConn->m_login, hConn->m_password, hConn->m_dbName, hConn->m_schema, errorText);
+		hConn->m_login, hConn->m_password, hConn->m_dbName, hConn->m_schema, hConn->m_addConnectStr, hConn->m_sendRetryCount, errorText);
 
 	if (hConn->m_connection != NULL)
 	{
@@ -255,7 +262,8 @@ bool LIBNXDB_EXPORTABLE DBReconnect(DB_HANDLE hConn)
    for(nCount = 0; ; nCount++)
    {
 		hConn->m_connection = hConn->m_driver->m_fpDrvConnect(hConn->m_server, hConn->m_login,
-                                                            hConn->m_password, hConn->m_dbName, hConn->m_schema, errorText);
+                                                            hConn->m_password, hConn->m_dbName,
+                                                            hConn->m_schema, hConn->m_addConnectStr, hConn->m_sendRetryCount, errorText);
       if (hConn->m_connection != NULL)
       {
          if (hConn->m_driver->m_fpDrvSetPrefetchLimit != NULL)

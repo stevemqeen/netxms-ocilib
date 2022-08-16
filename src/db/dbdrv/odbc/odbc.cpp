@@ -190,7 +190,7 @@ extern "C" void EXPORT DrvUnload()
  * pszHost should be set to ODBC source name, and pszDatabase is ignored
  */
 extern "C" DBDRV_CONNECTION EXPORT DrvConnect(const char *pszHost, const char *pszLogin, const char *pszPassword, 
-                                              const char *pszDatabase, const char *schema, NETXMS_WCHAR *errorText)
+                                              const char *pszDatabase, const char *schema, const char *addConnectStr, int sendRetryCount, NETXMS_WCHAR *errorText)
 {
    long iResult;
    ODBCDRV_CONN *pConn;

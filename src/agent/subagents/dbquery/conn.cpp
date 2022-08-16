@@ -115,7 +115,7 @@ bool DBConnection::connect()
       DBDisconnect(m_hdb);
 
    TCHAR errorText[DBDRV_MAX_ERROR_TEXT];
-   m_hdb = DBConnect(m_hDriver, m_server, m_dbName, m_login, m_password, NULL, errorText);
+   m_hdb = DBConnect(m_hDriver, m_server, m_dbName, m_login, m_password, NULL, NULL, -1, errorText);
    if (m_hdb != NULL)
    {
       AgentWriteLog(NXLOG_INFO, _T("DBQUERY: connected to database %s"), m_id);

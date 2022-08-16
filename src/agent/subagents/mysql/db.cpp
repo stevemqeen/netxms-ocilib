@@ -458,7 +458,7 @@ reconnect:
       MutexLock(m_sessionLock);
 
       TCHAR errorText[DBDRV_MAX_ERROR_TEXT];
-      m_session = DBConnect(g_mysqlDriver, m_info.server, m_info.name, m_info.login, m_info.password, NULL, errorText);
+      m_session = DBConnect(g_mysqlDriver, m_info.server, m_info.name, m_info.login, m_info.password, NULL, NULL, -1, errorText);
       if (m_session == NULL)
       {
          MutexUnlock(m_sessionLock);

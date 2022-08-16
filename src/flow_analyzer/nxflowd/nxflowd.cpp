@@ -151,7 +151,7 @@ bool Initialize()
 	TCHAR errorText[DBDRV_MAX_ERROR_TEXT];
 	for(int i = 0; ; i++)
 	{
-		g_dbConnection = DBConnect(g_dbDriverHandle, s_dbServer, s_dbName, s_dbLogin, s_dbPassword, s_dbSchema, errorText);
+		g_dbConnection = DBConnect(g_dbDriverHandle, s_dbServer, s_dbName, s_dbLogin, s_dbPassword, s_dbSchema, NULL, -1, errorText);
 		if ((g_dbConnection != NULL) || (i == 5))
 			break;
 		ThreadSleep(5);

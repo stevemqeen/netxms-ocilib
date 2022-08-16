@@ -250,7 +250,7 @@ THREAD_RESULT THREAD_CALL queryThread(void *arg)
 
 	while(true)
 	{
-		db.handle = DBConnect(g_driverHandle, NULL, db.dsn, db.username, db.password, NULL, errorText);
+		db.handle = DBConnect(g_driverHandle, NULL, db.dsn, db.username, db.password, NULL, NULL, -1, errorText);
 		if (db.handle != NULL)
 		{
 			AgentWriteLog(EVENTLOG_INFORMATION_TYPE, _T("%s: connected to DB"), MYNAMESTR);

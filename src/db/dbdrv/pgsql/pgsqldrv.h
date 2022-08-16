@@ -49,6 +49,7 @@
 typedef struct
 {
 	PGconn *handle;
+	int sendRetryCount;
 	MUTEX mutexQueryLock;
 } PG_CONN;
 
