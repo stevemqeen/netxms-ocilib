@@ -21,6 +21,7 @@
 **/
 #include "ocilibdrv.h"
 #include <malloc.h>
+#include <ndebug.h> // TODO: remove (used for TP_LOG only)
 
 #define DRV_UTF8_BYTES_PER_CHAR 4
 
@@ -655,6 +656,43 @@ void *OracleBatchBind::getData()
 }
 
 /**
+ * 
+ */
+bool OracleBatchBind::isElementNull(int pos)
+{
+	// Check for NULL
+	if (m_strings[pos] != NULL)
+	{
+		if (sizeof(TCHAR) == 2)
+		{
+			// According to code: maximum length of single string element. So that all m_strings elements are allocated with such size.
+			// We don't use strlen() here, because that might cause performance issues on large sets of elements
+			if (m_elementSize >= 4 &&
+				(m_strings[pos][0] == '\3' &&
+				m_strings[pos][1] == '\0' &&
+				m_strings[pos][2] == '\0' &&
+				m_strings[pos][3] == '\0'))
+			{
+				return true;
+			}
+		}
+		else
+		{
+			// According to code: maximum length of single string element. So that all m_strings elements are allocated with such size.
+			// We don't use strlen() here, because that might cause performance issues on large sets of elements
+			if (m_elementSize >= 2 &&
+				(m_strings[pos][0] == '\3' &&
+				m_strings[pos][1] == '\0'))
+			{
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+/**
  * Bind parameter to statement - batch mode
  */
 static void BindBatch(ORACLE_STATEMENT *stmt, int pos, int sqlType, int cType, void *buffer, int allocType)
@@ -681,13 +719,21 @@ static void BindBatch(ORACLE_STATEMENT *stmt, int pos, int sqlType, int cType, v
 		case DB_CTYPE_STRING:
 			{
 #if UNICODE_UCS4
-			if(_tcslen((TCHAR *)buffer) == 0)
-				sqlBuffer = _tcsdup("\3\0\0"); // set the end of text symbol
-			else
-				sqlBuffer = _tcsdup((TCHAR *)buffer);
+		TP_LOG(log_debug, "BindBatch(): size is %d at %d: [%s]", _tcslen((TCHAR *)buffer), pos, (TCHAR *)buffer);
 
-         if (allocType == DB_BIND_DYNAMIC)
-				free(buffer);
+		if(_tcslen((TCHAR *)buffer) > 0)
+		{
+			sqlBuffer = _tcsdup((TCHAR *)buffer);
+		}
+		else
+		{
+			sqlBuffer = _tcsdup(sizeof(TCHAR) == 2 ? "\3\0\0\0" : "\3\0");
+		}
+
+		if (allocType == DB_BIND_DYNAMIC)
+		{
+			free(buffer);
+		}
 #else
          if (allocType == DB_BIND_DYNAMIC)
          {
@@ -794,6 +840,16 @@ extern "C" DWORD EXPORT DrvExecute(ORACLE_CONN *pConn, ORACLE_STATEMENT *stmt, T
 					{
 						unsigned int m_dataLen = (b->getElementSize() / sizeof(TCHAR)); // maximum length of single string element
 						OCI_BindArrayOfStrings(stmt->handleStmt, bindPos, (TCHAR*)b->getData(), m_dataLen-1, 0);
+
+						// Bind NULL values if there is some
+						for (int pos = 0; pos < b->getElementsCount(); pos++)
+						{
+							if (b->isElementNull(pos))
+							{
+								TP_LOG(log_debug, "DrvExecute bind null at pos: %d", pos);
+								OCI_BindSetNullAtPos(OCI_GetBind(stmt->handleStmt, i + 1), pos + 1);
+							}
+						}
 					}
 					break;
 				case SQLT_UIN:
@@ -1062,8 +1118,8 @@ static ORACLE_RESULT *ProcessQueryResults(ORACLE_CONN *pConn, OCI_Statement *han
 						TCHAR *result = (TCHAR*)OCI_GetString(resultSet, i + 1);
 						int length = _tcslen(result);
 						bool emptyFlag = false;
-						
-						// If there is only end of string symbols, the result should be empty
+
+						// Replace historical null placeholders with "empty" string.
 						if((length >= 1 && _tcsnicmp(OCI_GetString(resultSet, i + 1), "\3", 1) == 0) ||
 							(length >= 2 && _tcsnicmp(OCI_GetString(resultSet, i + 1), "\r\n", 2) == 0))
 						{
