@@ -665,7 +665,7 @@ static THREAD_RESULT THREAD_CALL RunMonitorThread(void* info)
    while(TRUE)
    {
       dbHandle = DBConnect(
-         s_driver, db2Info->db2DbAlias, db2Info->db2DbName, db2Info->db2UName, db2Info->db2UPass, NULL, connectError);
+         s_driver, db2Info->db2DbAlias, db2Info->db2DbName, db2Info->db2UName, db2Info->db2UPass, NULL, NULL, -1, connectError);
 
       if (dbHandle == NULL)
       {

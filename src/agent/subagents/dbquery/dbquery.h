@@ -102,6 +102,7 @@ private:
 	TCHAR *m_dbName;
 	TCHAR *m_login;
 	TCHAR *m_password;
+   TCHAR *m_addConnectStr;
 	DB_DRIVER m_hDriver;
 	DB_HANDLE m_hdb;
 

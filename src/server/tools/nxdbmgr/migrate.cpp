@@ -71,7 +71,7 @@ static bool ConnectToSource()
    WriteToTerminalEx(_T("Database driver \x1b[1m%s\x1b[0m loaded\n"), s_dbDriver);
 
 	TCHAR errorText[DBDRV_MAX_ERROR_TEXT];
-   s_hdbSource = DBConnect(s_driver, s_dbServer, s_dbName, s_dbLogin, s_dbPassword, s_dbSchema, errorText);
+   s_hdbSource = DBConnect(s_driver, s_dbServer, s_dbName, s_dbLogin, s_dbPassword, s_dbSchema, NULL, -1, errorText);
    if (s_hdbSource == NULL)
    {
 		_tprintf(_T("Unable to connect to database %s@%s as %s: %s\n"), s_dbName, s_dbServer, s_dbLogin, errorText);
