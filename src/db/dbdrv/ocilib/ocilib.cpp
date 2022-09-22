@@ -212,7 +212,7 @@ static void DestroyQueryResult(ORACLE_RESULT *pResult)
  * Connect to database
  */
 extern "C" DBDRV_CONNECTION EXPORT DrvConnect(const char *host, const char *login, const char *password, 
-                                              const char *database, const char *schema, TCHAR *errorText)
+                                              const char *database, const char *schema, const char *addConnectStr, int sendRetryCount, TCHAR *errorText)
 {
 	ORACLE_CONN *pConn;
 	OCI_Connection *OCIConn;

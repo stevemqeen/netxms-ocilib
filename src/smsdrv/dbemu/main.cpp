@@ -64,7 +64,7 @@ extern "C" bool EXPORT SMSDriverInit(const TCHAR *pszInitArgs, Config *config)
       DecryptPassword(s_dbUsername, s_dbPassword, s_dbPassword, MAX_DB_PASSWORD);
 
 		TCHAR errorText[DBDRV_MAX_ERROR_TEXT];
-		s_dbh = DBConnect(s_driver, s_dbServer, s_dbName, s_dbUsername, s_dbPassword, s_dbSchema, errorText);
+		s_dbh = DBConnect(s_driver, s_dbServer, s_dbName, s_dbUsername, s_dbPassword, s_dbSchema, NULL, -1, errorText);
 		if (s_dbh == NULL) // Do not fail, just report
 			nxlog_debug(1, _T("%s: Unable to connect to database %s@%s as %s: %s"), MYNAMESTR, s_dbName, s_dbServer, s_dbUsername, errorText);
 
@@ -85,7 +85,7 @@ extern "C" bool EXPORT SMSDriverSend(const TCHAR *pszPhoneNumber, const TCHAR *p
 	if (s_dbh == NULL)
 	{
 		TCHAR errorText[DBDRV_MAX_ERROR_TEXT];
-		s_dbh = DBConnect(s_driver, s_dbServer, s_dbName, s_dbUsername, s_dbPassword, s_dbSchema, errorText);
+		s_dbh = DBConnect(s_driver, s_dbServer, s_dbName, s_dbUsername, s_dbPassword, s_dbSchema, NULL, -1, errorText);
 		if (s_dbh == NULL)
 			nxlog_debug(1, _T("%s: Unable to connect to database %s@%s as %s: %s"), MYNAMESTR, s_dbName, s_dbServer, s_dbUsername, errorText);
 	}

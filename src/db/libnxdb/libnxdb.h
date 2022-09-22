@@ -47,7 +47,7 @@ struct db_driver_t
 	MUTEX m_mutexReconnect;
 	HMODULE m_handle;
 	void *m_userArg;
-	DBDRV_CONNECTION (* m_fpDrvConnect)(const char *, const char *, const char *, const char *, const char *, TCHAR *);
+	DBDRV_CONNECTION (* m_fpDrvConnect)(const char *, const char *, const char *, const char *, const char *, const char *, int, TCHAR *);
 	void (* m_fpDrvDisconnect)(DBDRV_CONNECTION);
 	bool (* m_fpDrvSetPrefetchLimit)(DBDRV_CONNECTION, int);
 	DBDRV_STATEMENT (* m_fpDrvPrepare)(DBDRV_CONNECTION, const TCHAR *, DWORD *, TCHAR *);
@@ -115,6 +115,8 @@ struct db_handle_t
 	char *m_password;
 	char *m_dbName;
 	char *m_schema;
+	char *m_addConnectStr;
+	int m_sendRetryCount;
 	ObjectArray<db_statement_t> *m_preparedStatements;
 };
 

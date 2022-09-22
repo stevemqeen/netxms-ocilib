@@ -31,6 +31,8 @@ static TCHAR m_login[256];
 static TCHAR m_password[256];
 static TCHAR m_dbName[256];
 static TCHAR m_schema[256];
+static TCHAR m_addConnectStr[256];
+static int m_sendRetryCount;
 
 static int m_basePoolSize;
 static int m_maxPoolSize;
@@ -55,7 +57,7 @@ static bool DBConnectionPoolPopulate()
 	for(int i = 0; i < m_basePoolSize; i++)
 	{
       PoolConnectionInfo *conn = new PoolConnectionInfo;
-      conn->handle = DBConnect(m_driver, m_server, m_dbName, m_login, m_password, m_schema, errorText);
+      conn->handle = DBConnect(m_driver, m_server, m_dbName, m_login, m_password, m_schema, m_addConnectStr, m_sendRetryCount, errorText);
       if (conn->handle != NULL)
       {
          conn->inUse = false;
@@ -109,7 +111,7 @@ static bool ResetConnection(PoolConnectionInfo *conn)
 	DBDisconnect(conn->handle);
 
 	TCHAR errorText[DBDRV_MAX_ERROR_TEXT];
-	conn->handle = DBConnect(m_driver, m_server, m_dbName, m_login, m_password, m_schema, errorText);
+	conn->handle = DBConnect(m_driver, m_server, m_dbName, m_login, m_password, m_schema, m_addConnectStr, m_sendRetryCount, errorText);
 	if (conn->handle != NULL)
    {
 		conn->connectTime = now;
@@ -217,7 +219,7 @@ static THREAD_RESULT THREAD_CALL MaintenanceThread(void *arg)
  * Start connection pool
  */
 bool LIBNXDB_EXPORTABLE DBConnectionPoolStartup(DB_DRIVER driver, const TCHAR *server, const TCHAR *dbName,
-																const TCHAR *login, const TCHAR *password, const TCHAR *schema,
+																const TCHAR *login, const TCHAR *password, const TCHAR *schema, const TCHAR *addConnectStr, int sendRetryCount,
 																int basePoolSize, int maxPoolSize, int cooldownTime,
 																int connTTL)
 {
@@ -230,6 +232,8 @@ bool LIBNXDB_EXPORTABLE DBConnectionPoolStartup(DB_DRIVER driver, const TCHAR *s
 	nx_strncpy(m_login, CHECK_NULL_EX(login), 256);
 	nx_strncpy(m_password, CHECK_NULL_EX(password), 256);
 	nx_strncpy(m_schema, CHECK_NULL_EX(schema), 256);
+	nx_strncpy(m_addConnectStr, CHECK_NULL_EX(addConnectStr), 256);
+   m_sendRetryCount = sendRetryCount;
 
 	m_basePoolSize = basePoolSize;
 	m_maxPoolSize = maxPoolSize;
@@ -325,7 +329,7 @@ retry:
 	{
 	   TCHAR errorText[DBDRV_MAX_ERROR_TEXT];
       PoolConnectionInfo *conn = new PoolConnectionInfo;
-      conn->handle = DBConnect(m_driver, m_server, m_dbName, m_login, m_password, m_schema, errorText);
+      conn->handle = DBConnect(m_driver, m_server, m_dbName, m_login, m_password, m_schema, m_addConnectStr, m_sendRetryCount, errorText);
       if (conn->handle != NULL)
       {
          conn->inUse = true;

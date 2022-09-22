@@ -247,7 +247,7 @@ bool OpenLocalDatabase()
 	}
 
    TCHAR errorText[DBDRV_MAX_ERROR_TEXT];
-   s_db = DBConnect(s_driver, NULL, dbFile, NULL, NULL, NULL, errorText);
+   s_db = DBConnect(s_driver, NULL, dbFile, NULL, NULL, NULL, NULL, -1, errorText);
    if (s_db == NULL)
    {
       nxlog_debug(1, _T("Local database open error: %s"), errorText);

@@ -553,7 +553,7 @@ bool ValidateDatabase()
 DB_HANDLE ConnectToDatabase()
 {
    TCHAR errorText[DBDRV_MAX_ERROR_TEXT];
-   DB_HANDLE hdb = DBConnect(s_driver, s_dbServer, s_dbName, s_dbLogin, s_dbPassword, s_dbSchema, errorText);
+   DB_HANDLE hdb = DBConnect(s_driver, s_dbServer, s_dbName, s_dbLogin, s_dbPassword, s_dbSchema, NULL, -1, errorText);
    if (hdb == NULL)
    {
       _tprintf(_T("Unable to connect to database %s@%s as %s: %s\n"), s_dbName, s_dbServer, s_dbLogin, errorText);
