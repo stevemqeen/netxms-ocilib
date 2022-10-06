@@ -457,8 +457,10 @@ static void BindNormal(ORACLE_STATEMENT *stmt, int pos, int sqlType, int cType, 
 
 			if(sqlType == DB_SQLTYPE_CLOB)
 			{	
+				unsigned int char_cnt = 0;
+				unsigned int byte_cnt = _tcslen((TCHAR *)sqlBuffer);
 				OCI_Lob *lob = OCI_LobCreate(stmt->connection->handleConnection, OCI_CLOB);
-				OCI_LobWrite(lob, (otext *)sqlBuffer, _tcslen((TCHAR *)sqlBuffer));
+				OCI_LobWrite2(lob, (otext *)sqlBuffer, &char_cnt, &byte_cnt);
 				OCI_BindLob(stmt->handleStmt, bindPos, lob);
 				stmt->lobBinds->set(pos - 1, lob);
 			}
