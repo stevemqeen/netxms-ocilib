@@ -43,6 +43,7 @@
 #include <dbdrv.h>
 #include <oci.h>
 #include <ocilib.h>
+#include <vector>
 
 /**
  * Fetch buffer
@@ -95,9 +96,11 @@ public:
    void addRow();
    void set(void *value);
    void *getData();
+   int getElementsCount() { return m_size; }
    int getElementSize() { return m_elementSize; }
    int getCType() { return m_cType; }
    ub2 getOraType() { return m_oraType; }
+   bool isElementNull(int pos);
 };
 
 /**
