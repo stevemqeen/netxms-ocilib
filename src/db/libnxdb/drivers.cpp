@@ -248,7 +248,7 @@ DB_DRIVER LIBNXDB_EXPORTABLE DBLoadDriver(const TCHAR *module, const TCHAR *init
 	driver->m_fpDrvUnload = (void (*)(void))DLGetSymbolAddrEx(driver->m_handle, "DrvUnload");
 	driver->m_fpDrvPrepareStringA = (char* (*)(const char *))DLGetSymbolAddrEx(driver->m_handle, "DrvPrepareStringA");
 	driver->m_fpDrvPrepareStringW = (TCHAR* (*)(const TCHAR *))DLGetSymbolAddrEx(driver->m_handle, "DrvPrepareStringW");
-	driver->m_fpDrvIsTableExist = (int (*)(DBDRV_CONNECTION, const WCHAR *))DLGetSymbolAddrEx(driver->m_handle, "DrvIsTableExist");
+	driver->m_fpDrvIsTableExist = (int (*)(DBDRV_CONNECTION, const TCHAR *))DLGetSymbolAddrEx(driver->m_handle, "DrvIsTableExist");
 
 	if ((fpDrvInit == NULL) || (driver->m_fpDrvConnect == NULL) || (driver->m_fpDrvDisconnect == NULL) ||
 		(driver->m_fpDrvPrepare == NULL) || (driver->m_fpDrvBind == NULL) || (driver->m_fpDrvFreeStatement == NULL) ||
