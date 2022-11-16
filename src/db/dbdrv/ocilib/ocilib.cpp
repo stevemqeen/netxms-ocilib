@@ -21,6 +21,7 @@
 **/
 #include "ocilibdrv.h"
 #include <malloc.h>
+#include <ndebug.h> // TODO: remove (used for TP_LOG only)
 
 #define DRV_UTF8_BYTES_PER_CHAR 4
 
@@ -1734,8 +1735,9 @@ extern "C" DWORD EXPORT DrvRollback(ORACLE_CONN *pConn)
  */
 extern "C" int EXPORT DrvIsTableExist(ORACLE_CONN *pConn, const TCHAR *name)
 {
-	TCHAR query[256];
-	snprintf(query, 256, "SELECT count(*) FROM user_tables WHERE table_name=upper('%s')", name);
+	TCHAR query[512];
+	// TODO: Rework with bound parameter to prevent SQL injection and less worry about buffer (query string) size.
+	snprintf(query, 512, "SELECT count(*) FROM user_tables WHERE table_name=upper('%s')", name);
 	DWORD error;
 	TCHAR errorText[DBDRV_MAX_ERROR_TEXT];
 	int rc = DBIsTableExist_Failure;
@@ -1748,6 +1750,10 @@ extern "C" int EXPORT DrvIsTableExist(ORACLE_CONN *pConn, const TCHAR *name)
 		DrvGetField(hResult, 0, 0, buffer, 64);
 		rc = (_tcstol(buffer, NULL, 10) > 0) ? DBIsTableExist_Found : DBIsTableExist_NotFound;
 		DrvFreeResult(hResult);
+	}
+	else
+	{
+		TP_LOG(log_warn, "DrvIsTableExist failed for \"%s\": %s", name, errorText);
 	}
 
 	return rc;
