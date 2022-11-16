@@ -1810,13 +1810,7 @@ String LIBNXDB_EXPORTABLE DBPrepareStringA(DB_DRIVER drv, const char *str, int m
  */
 int LIBNXDB_EXPORTABLE DBIsTableExist(DB_HANDLE conn, const TCHAR *table)
 {
-#ifdef UNICODE
    return conn->m_driver->m_fpDrvIsTableExist(conn->m_connection, table);
-#else
-   WCHAR wname[256];
-   MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, table, -1, wname, 256);
-   return conn->m_driver->m_fpDrvIsTableExist(conn->m_connection, wname);
-#endif
 }
 
 /**
