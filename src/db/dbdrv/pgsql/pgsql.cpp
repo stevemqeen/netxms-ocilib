@@ -21,6 +21,7 @@
 **/
 
 #include "pgsqldrv.h"
+#include <ndebug.h>
 
 #ifndef _WIN32
 #include <dlfcn.h>
@@ -1433,20 +1434,34 @@ extern "C" DWORD EXPORT DrvRollback(PG_CONN *pConn)
  */
 extern "C" int EXPORT DrvIsTableExist(PG_CONN *pConn, const TCHAR *name)
 {
-	TCHAR query[256];
-	snprintf(query, 256, _T("SELECT count(*) FROM information_schema.tables WHERE table_catalog=current_database() AND table_schema=current_schema() AND lower(table_name)=lower('%ls')"), name);
-	DWORD error;
-	TCHAR errorText[DBDRV_MAX_ERROR_TEXT];
 	int rc = DBIsTableExist_Failure;
-	DBDRV_RESULT hResult = DrvSelect(pConn, query, &error, errorText);
+	Oid types[1];
+	char *values[1];
+	int lengths[1], formats[1];
 
-	if (hResult != NULL)
+	values[0] = (char *) name;
+	types[0] = 0; // text
+	lengths[0] = 0; // Not strlen(name) (ignored for text parameters, required for binary, e.g., integer).
+	formats[0] = 0; // 0 is text, 1 is binary
+
+	PGresult *hResult = PQexecParams(pConn->handle,
+		_T("SELECT 1 FROM information_schema.tables WHERE table_catalog=current_database() AND table_schema=current_schema() AND lower(table_name)=lower($1)"),
+		1, // Parameters count
+		types, values, lengths, formats,
+		0); // Result format (1 means binary, 0 – text)
+
+
+	if (PQresultStatus(hResult) == PGRES_TUPLES_OK) // PGRES_COMMAND_OK is for empty response.
 	{
 		TCHAR buffer[64] = _T("");
 		DrvGetField(hResult, 0, 0, buffer, 64);
 		rc = (_tcstol(buffer, NULL, 10) > 0) ? DBIsTableExist_Found : DBIsTableExist_NotFound;
-		DrvFreeResult(hResult);
 	}
+	else
+	{
+		TP_LOG(log_warn, "DrvIsTableExist failed for \"%s\": %s", name, PQerrorMessage(pConn->handle));
+	}
+	DrvFreeResult(hResult);
 
 	return rc;
 }
