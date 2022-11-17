@@ -85,7 +85,7 @@ struct db_driver_t
 	const char* (* m_fpDrvGetColumnNameUnbuffered)(DBDRV_UNBUFFERED_RESULT, int);
 	TCHAR* (* m_fpDrvPrepareStringW)(const TCHAR *);
 	char* (* m_fpDrvPrepareStringA)(const char *);
-	int (* m_fpDrvIsTableExist)(DBDRV_CONNECTION, const WCHAR *);
+	int (* m_fpDrvIsTableExist)(DBDRV_CONNECTION, const TCHAR *);
 };
 
 /**
