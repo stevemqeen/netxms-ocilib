@@ -25,6 +25,8 @@
 DECLARE_DRIVER_HEADER("ORACLE")
 
 static DWORD DrvQueryInternal(ORACLE_CONN *pConn, const TCHAR *pwszQuery, TCHAR *errorText);
+void DrvInitErrorText(TCHAR *errorText);
+void DrvSetErrorText(const TCHAR *sourceText, TCHAR *errorText);
 
 /**
  * Global environment handle
@@ -142,10 +144,13 @@ extern "C" void EXPORT DrvUnload()
  */
 static void GetErrorFromHandle(OCIError *handle, sb4 *errorCode, TCHAR *errorText)
 {
-	OCIErrorGet(handle, 1, NULL, errorCode, (text *)errorText, DBDRV_MAX_ERROR_TEXT, OCI_HTYPE_ERROR);
-	errorText[DBDRV_MAX_ERROR_TEXT - 1] = 0;
+	if (NULL != errorText)
+	{
+		OCIErrorGet(handle, 1, NULL, errorCode, (text *)errorText, DBDRV_MAX_ERROR_TEXT, OCI_HTYPE_ERROR);
+		errorText[DBDRV_MAX_ERROR_TEXT - 1] = 0;
 
-	RemoveTrailingCRLF(errorText);
+		RemoveTrailingCRLF(errorText);
+	}
 }
 
 /**
@@ -191,6 +196,8 @@ static void DestroyQueryResult(ORACLE_RESULT *pResult)
 extern "C" DBDRV_CONNECTION EXPORT DrvConnect(const char *host, const char *login, const char *password, 
                                               const char *database, const char *schema, const char *addConnectStr, int sendRetryCount, TCHAR *errorText)
 {
+	DrvInitErrorText(errorText);
+
 	ORACLE_CONN *pConn;
 	UCS2CHAR *pwszStr;
 
@@ -282,7 +289,7 @@ extern "C" DBDRV_CONNECTION EXPORT DrvConnect(const char *host, const char *logi
 	}
 	else
 	{
-		strcpy(errorText, "Memory allocation error");
+		DrvSetErrorText("Memory allocation error", errorText);
 	}
 
    return (DBDRV_CONNECTION)pConn;
@@ -394,6 +401,8 @@ static UCS2CHAR *ConvertQuery(WCHAR *query)
  */
 extern "C" ORACLE_STATEMENT EXPORT *DrvPrepare(ORACLE_CONN *pConn, WCHAR *pwszQuery, DWORD *pdwError, TCHAR *errorText)
 {
+	DrvInitErrorText(errorText);
+
 	ORACLE_STATEMENT *stmt = NULL;
 	OCIStmt *handleStmt;
 
@@ -418,13 +427,9 @@ extern "C" ORACLE_STATEMENT EXPORT *DrvPrepare(ORACLE_CONN *pConn, WCHAR *pwszQu
 	{
 		SetLastError(pConn);
 		*pdwError = IsConnectionError(pConn);
+		DrvSetErrorText(pConn->lastErrorText, errorText);
 	}
 
-	if (errorText != NULL)
-	{
-		strncpy(errorText, pConn->lastErrorText, DBDRV_MAX_ERROR_TEXT);
-		errorText[DBDRV_MAX_ERROR_TEXT - 1] = 0;
-	}
 	MutexUnlock(pConn->mutexQueryLock);
 
 	free(ucs2Query);
@@ -785,6 +790,8 @@ extern "C" void EXPORT DrvBind(ORACLE_STATEMENT *stmt, int pos, int sqlType, int
  */
 extern "C" DWORD EXPORT DrvExecute(ORACLE_CONN *pConn, ORACLE_STATEMENT *stmt, TCHAR *errorText)
 {
+	DrvInitErrorText(errorText);
+
 	DWORD dwResult;
 
    if (stmt->batchMode)
@@ -819,13 +826,9 @@ extern "C" DWORD EXPORT DrvExecute(ORACLE_CONN *pConn, ORACLE_STATEMENT *stmt, T
 	{
 		SetLastError(pConn);
 		dwResult = IsConnectionError(pConn);
+		DrvSetErrorText(pConn->lastErrorText, errorText);
 	}
 
-	if (errorText != NULL)
-	{
-		strncpy(errorText, pConn->lastErrorText, DBDRV_MAX_ERROR_TEXT);
-		errorText[DBDRV_MAX_ERROR_TEXT - 1] = 0;
-	}
 	MutexUnlock(pConn->mutexQueryLock);
 
    if (stmt->batchMode)
@@ -860,6 +863,8 @@ extern "C" void EXPORT DrvFreeStatement(ORACLE_STATEMENT *stmt)
  */
 static DWORD DrvQueryInternal(ORACLE_CONN *pConn, const TCHAR *pwszQuery, TCHAR *errorText)
 {
+	DrvInitErrorText(errorText);
+
 	OCIStmt *handleStmt;
 	DWORD dwResult;
 
@@ -876,6 +881,7 @@ static DWORD DrvQueryInternal(ORACLE_CONN *pConn, const TCHAR *pwszQuery, TCHAR 
 		{
 			SetLastError(pConn);
 			dwResult = IsConnectionError(pConn);
+			DrvSetErrorText(pConn->lastErrorText, errorText);
 		}
 		OCIStmtRelease(handleStmt, pConn->handleError, NULL, 0, OCI_DEFAULT);
 	}
@@ -883,11 +889,7 @@ static DWORD DrvQueryInternal(ORACLE_CONN *pConn, const TCHAR *pwszQuery, TCHAR 
 	{
 		SetLastError(pConn);
 		dwResult = IsConnectionError(pConn);
-	}
-	if (errorText != NULL)
-	{
-		strncpy(errorText, pConn->lastErrorText, DBDRV_MAX_ERROR_TEXT);
-		errorText[DBDRV_MAX_ERROR_TEXT - 1] = 0;
+		DrvSetErrorText(pConn->lastErrorText, errorText);
 	}
 	MutexUnlock(pConn->mutexQueryLock);
 
@@ -1087,6 +1089,8 @@ static ORACLE_RESULT *ProcessQueryResults(ORACLE_CONN *pConn, OCIStmt *handleStm
  */
 extern "C" DBDRV_RESULT EXPORT DrvSelect(ORACLE_CONN *pConn, TCHAR *pwszQuery, DWORD *pdwError, TCHAR *errorText)
 {
+	DrvInitErrorText(errorText);
+
 	ORACLE_RESULT *pResult = NULL;
 	OCIStmt *handleStmt;
 
@@ -1104,6 +1108,7 @@ extern "C" DBDRV_RESULT EXPORT DrvSelect(ORACLE_CONN *pConn, TCHAR *pwszQuery, D
 		{
 			SetLastError(pConn);
 			*pdwError = IsConnectionError(pConn);
+			DrvSetErrorText(pConn->lastErrorText, errorText);
 		}
 		OCIStmtRelease(handleStmt, pConn->handleError, NULL, 0, OCI_DEFAULT);
 	}
@@ -1111,11 +1116,7 @@ extern "C" DBDRV_RESULT EXPORT DrvSelect(ORACLE_CONN *pConn, TCHAR *pwszQuery, D
 	{
 		SetLastError(pConn);
 		*pdwError = IsConnectionError(pConn);
-	}
-	if (errorText != NULL)
-	{
-		strncpy(errorText, pConn->lastErrorText, DBDRV_MAX_ERROR_TEXT);
-		errorText[DBDRV_MAX_ERROR_TEXT - 1] = 0;
+		DrvSetErrorText(pConn->lastErrorText, errorText);
 	}
 	MutexUnlock(pConn->mutexQueryLock);
 
@@ -1127,6 +1128,8 @@ extern "C" DBDRV_RESULT EXPORT DrvSelect(ORACLE_CONN *pConn, TCHAR *pwszQuery, D
  */
 extern "C" DBDRV_RESULT EXPORT DrvSelectPrepared(ORACLE_CONN *pConn, ORACLE_STATEMENT *stmt, DWORD *pdwError, TCHAR *errorText)
 {
+	DrvInitErrorText(errorText);
+
 	ORACLE_RESULT *pResult = NULL;
 
 	MutexLock(pConn->mutexQueryLock);
@@ -1140,13 +1143,9 @@ extern "C" DBDRV_RESULT EXPORT DrvSelectPrepared(ORACLE_CONN *pConn, ORACLE_STAT
 	{
 		SetLastError(pConn);
 		*pdwError = IsConnectionError(pConn);
+		DrvSetErrorText(pConn->lastErrorText, errorText);
 	}
 
-	if (errorText != NULL)
-	{
-		strncpy(errorText, pConn->lastErrorText, DBDRV_MAX_ERROR_TEXT);
-		errorText[DBDRV_MAX_ERROR_TEXT - 1] = 0;
-	}
 	MutexUnlock(pConn->mutexQueryLock);
 
 	return pResult;
@@ -1344,6 +1343,8 @@ static ORACLE_UNBUFFERED_RESULT *ProcessUnbufferedQueryResults(ORACLE_CONN *pCon
  */
 extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectUnbuffered(ORACLE_CONN *pConn, TCHAR *pwszQuery, DWORD *pdwError, TCHAR *errorText)
 {
+	DrvInitErrorText(errorText);
+
    ORACLE_UNBUFFERED_RESULT *result = NULL;
 
 	MutexLock(pConn->mutexQueryLock);
@@ -1375,11 +1376,7 @@ extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectUnbuffered(ORACLE_CONN *pConn
 
 	// On failure, unlock query mutex and do cleanup
 	OCIStmtRelease(handleStmt, pConn->handleError, NULL, 0, OCI_DEFAULT);
-	if (errorText != NULL)
-	{
-		strncpy(errorText, pConn->lastErrorText, DBDRV_MAX_ERROR_TEXT);
-		errorText[DBDRV_MAX_ERROR_TEXT - 1] = 0;
-	}
+	DrvSetErrorText(pConn->lastErrorText, errorText);
 	MutexUnlock(pConn->mutexQueryLock);
 	return NULL;
 }
@@ -1389,6 +1386,8 @@ extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectUnbuffered(ORACLE_CONN *pConn
  */
 extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectPreparedUnbuffered(ORACLE_CONN *pConn, ORACLE_STATEMENT *stmt, DWORD *pdwError, TCHAR *errorText)
 {
+	DrvInitErrorText(errorText);
+
    ORACLE_UNBUFFERED_RESULT *result = NULL;
 
    MutexLock(pConn->mutexQueryLock);
@@ -1409,11 +1408,7 @@ extern "C" DBDRV_UNBUFFERED_RESULT EXPORT DrvSelectPreparedUnbuffered(ORACLE_CON
       return result;
 
    // On failure, unlock query mutex and do cleanup
-   if (errorText != NULL)
-   {
-      strncpy(errorText, pConn->lastErrorText, DBDRV_MAX_ERROR_TEXT);
-      errorText[DBDRV_MAX_ERROR_TEXT - 1] = 0;
-   }
+   DrvSetErrorText(pConn->lastErrorText, errorText);
    MutexUnlock(pConn->mutexQueryLock);
    return NULL;
 }
@@ -1656,3 +1651,33 @@ bool WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
 }
 
 #endif
+
+/**
+ * Initialize to empty if not NULL
+ */
+void DrvInitErrorText(TCHAR *errorText)
+{
+	if (NULL != errorText)
+	{
+		errorText[0] = 0;
+	}
+}
+
+/**
+ * Sets error text
+ */
+void DrvSetErrorText(const TCHAR *sourceText, TCHAR *errorText)
+{
+	if (NULL != errorText)
+	{
+		if (NULL != sourceText)
+		{
+			strncpy(errorText, sourceText, DBDRV_MAX_ERROR_TEXT);
+		}
+		else
+		{
+			strncpy(errorText, "Driver error = NULL - Unknown Error", DBDRV_MAX_ERROR_TEXT);
+		}
+		errorText[DBDRV_MAX_ERROR_TEXT - 1] = 0;
+	}
+}
