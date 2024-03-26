@@ -129,7 +129,9 @@ ISC::~ISC()
 	}
 	unlock();
 
+   m_msgWaitQueue->shutdown();
    delete m_msgWaitQueue;
+
 	if (m_ctx != NULL)
 		m_ctx->decRefCount();
 
