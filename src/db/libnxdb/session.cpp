@@ -334,7 +334,10 @@ void LIBNXDB_EXPORTABLE DBSetSessionInitCallback(void (*cb)(DB_HANDLE))
 bool LIBNXDB_EXPORTABLE DBQueryEx(DB_HANDLE hConn, const TCHAR *szQuery, TCHAR *errorText)
 {
    if (!IS_VALID_STATEMENT_HANDLE(hConn))
+   {
+      _tcscpy(errorText, _T("Invalid statement handle"));
       return false;
+   }
 
    DWORD dwResult;
 
@@ -390,7 +393,10 @@ bool LIBNXDB_EXPORTABLE DBQuery(DB_HANDLE hConn, const TCHAR *query)
 DB_RESULT LIBNXDB_EXPORTABLE DBSelectEx(DB_HANDLE hConn, const TCHAR *szQuery, TCHAR *errorText)
 {
    if (!IS_VALID_STATEMENT_HANDLE(hConn))
+   {
+      _tcscpy(errorText, _T("Invalid statement handle"));
       return NULL;
+   }
 
    DBDRV_RESULT hResult;
 	DB_RESULT result = NULL;
@@ -1186,7 +1192,10 @@ void LIBNXDB_EXPORTABLE DBFreeResult(DB_UNBUFFERED_RESULT hResult)
 DB_STATEMENT LIBNXDB_EXPORTABLE DBPrepareEx(DB_HANDLE hConn, const TCHAR *query, TCHAR *errorText)
 {
    if (!IS_VALID_STATEMENT_HANDLE(hConn))
+   {
+      _tcscpy(errorText, _T("Invalid statement handle"));
       return NULL;
+   }
 
 	DB_STATEMENT result = NULL;
 	INT64 ms;
