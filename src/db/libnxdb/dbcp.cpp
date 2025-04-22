@@ -26,7 +26,7 @@
 
 static bool s_initialized = false;
 static DB_DRIVER m_driver;
-static TCHAR m_server[256];
+static TCHAR m_server[4096];
 static TCHAR m_login[256];
 static TCHAR m_password[256];
 static TCHAR m_dbName[256];
@@ -227,7 +227,7 @@ bool LIBNXDB_EXPORTABLE DBConnectionPoolStartup(DB_DRIVER driver, const TCHAR *s
       return true;   // already initialized
 
 	m_driver = driver;
-	nx_strncpy(m_server, CHECK_NULL_EX(server), 256);
+	nx_strncpy(m_server, CHECK_NULL_EX(server), 4096);
 	nx_strncpy(m_dbName, CHECK_NULL_EX(dbName), 256);
 	nx_strncpy(m_login, CHECK_NULL_EX(login), 256);
 	nx_strncpy(m_password, CHECK_NULL_EX(password), 256);
