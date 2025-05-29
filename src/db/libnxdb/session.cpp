@@ -395,7 +395,7 @@ DB_RESULT LIBNXDB_EXPORTABLE DBSelectEx(DB_HANDLE hConn, const TCHAR *szQuery, T
    if (!IS_VALID_STATEMENT_HANDLE(hConn))
    {
       _tcscpy(errorText, _T("Invalid statement handle"));
-      return false;
+      return NULL;
    }
 
    DBDRV_RESULT hResult;
@@ -1194,7 +1194,7 @@ DB_STATEMENT LIBNXDB_EXPORTABLE DBPrepareEx(DB_HANDLE hConn, const TCHAR *query,
    if (!IS_VALID_STATEMENT_HANDLE(hConn))
    {
       _tcscpy(errorText, _T("Invalid statement handle"));
-      return false;
+      return NULL;
    }
 
 	DB_STATEMENT result = NULL;
