@@ -24,6 +24,7 @@
 #include "libnetxms.h"
 #include "ice.h"
 #include <nxcpapi.h>
+#include <openssl/provider.h>
 
 /**
  * Constants
@@ -575,6 +576,12 @@ NXCPEncryptionContext::NXCPEncryptionContext()
    m_cipher = -1;
 #ifdef _WITH_ENCRYPTION
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
+   OSSL_PROVIDER *legacy = OSSL_PROVIDER_load(NULL, "legacy");
+   if (legacy == NULL)
+   {
+      nxlog_debug(1, _T("Failed to load legacy OpenSSL provider (required for Blowfish)"));
+   }
+	
    m_encryptor = EVP_CIPHER_CTX_new();
    m_decryptor = EVP_CIPHER_CTX_new();
 #else
@@ -681,9 +688,9 @@ bool NXCPEncryptionContext::initCipher(int cipher)
    if (s_ciphers[cipher] == NULL)
       return false;   // Unsupported cipher
 
-   if (!EVP_EncryptInit_ex(m_encryptor, s_ciphers[cipher](), NULL, NULL, NULL))
+   if (1 != EVP_EncryptInit_ex(m_encryptor, s_ciphers[cipher](), NULL, NULL, NULL))
       return false;
-   if (!EVP_DecryptInit_ex(m_decryptor, s_ciphers[cipher](), NULL, NULL, NULL))
+   if (1 != EVP_DecryptInit_ex(m_decryptor, s_ciphers[cipher](), NULL, NULL, NULL))
       return false;
 
    switch(cipher)
@@ -710,13 +717,17 @@ bool NXCPEncryptionContext::initCipher(int cipher)
          return false;
    }
 
-   if (!EVP_CIPHER_CTX_set_key_length(m_encryptor, m_keyLength) || !EVP_CIPHER_CTX_set_key_length(m_decryptor, m_keyLength))
-      return false;
+   if ((cipher == NXCP_CIPHER_BLOWFISH_256) ||
+       (cipher == NXCP_CIPHER_BLOWFISH_128))
+   {
+      if (!EVP_CIPHER_CTX_set_key_length(m_encryptor, m_keyLength) || !EVP_CIPHER_CTX_set_key_length(m_decryptor, m_keyLength))
+         return false;
 
-   // This check is needed because at least some OpenSSL versions return no error
-   // from EVP_CIPHER_CTX_set_key_length but still not change key length
-   if ((EVP_CIPHER_CTX_key_length(m_encryptor) != m_keyLength) || (EVP_CIPHER_CTX_key_length(m_decryptor) != m_keyLength))
-      return false;
+      // This check is needed because at least some OpenSSL versions return no error
+      // from EVP_CIPHER_CTX_set_key_length but still not change key length
+      if ((EVP_CIPHER_CTX_key_length(m_encryptor) != m_keyLength) || (EVP_CIPHER_CTX_key_length(m_decryptor) != m_keyLength))
+         return false;
+   }
 
    m_cipher = cipher;
    return true;
