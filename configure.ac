@@ -45,6 +45,7 @@ find_existing_dir()
 PLATFORM=`uname -s`
 CPUTYPE=`uname -p`
 COMPONENTS=""
+DISABLE_JEMALLOC="no"
 DISABLE_ICONV="no"
 DISABLE_ENCRYPTION="no"
 DISABLE_LMSENSORS="no"
@@ -580,6 +581,14 @@ AC_ARG_WITH(jemalloc,
 			CPPFLAGS="$CPPFLAGS -I${withval}/include"
 			INSTALL_LIBPATH="${withval}/lib${INSTALL_LIBPATH:+:}${INSTALL_LIBPATH}"
 		fi
+	fi
+])
+
+AC_ARG_ENABLE(jemalloc-lib,
+[AS_HELP_STRING(--disable-jemalloc-lib,do not use jemalloc library)],
+[
+	if test "x$enableval" = "xno"; then
+		DISABLE_JEMALLOC="yes"
 	fi
 ])
 
@@ -2212,14 +2221,16 @@ if test "x$PLATFORM" = "xLinux"; then
 #endif
 	])
 
-	AC_CHECK_HEADERS([jemalloc/jemalloc.h],
-		[
-			AC_CHECK_LIB(jemalloc, malloc,
-				[ 
-					WITH_JEMALLOC="yes"
-					AC_DEFINE(WITH_JEMALLOC,1,Define to 1 if libjemalloc is used)
-				])
-		])
+	if test "x$DISABLE_JEMALLOC" = "xno"; then
+		AC_CHECK_HEADERS([jemalloc/jemalloc.h],
+			[
+				AC_CHECK_LIB(jemalloc, malloc,
+					[ 
+						WITH_JEMALLOC="yes"
+						AC_DEFINE(WITH_JEMALLOC,1,Define to 1 if libjemalloc is used)
+					])
+			])
+	fi
 fi
 
 
@@ -3279,7 +3290,9 @@ if test "x$ENABLE_DEBUG" = "xno"; then
 fi
 
 if test "x$WITH_JEMALLOC" = "xyes"; then
-	LIBS="$LIBS -ljemalloc"
+	if test "x$DISABLE_JEMALLOC" = "xno"; then
+		LIBS="$LIBS -ljemalloc"
+	fi
 fi
 
 AM_CONDITIONAL([USE_INTERNAL_EXPAT], [test "x$HAVE_LIBEXPAT" = "xno"])
@@ -3657,6 +3670,11 @@ echo
 	echo "Prefix                  : ${prefix}"
 	echo "Platform                : ${PLATFORM}"
 	echo "Shared library suffix   : ${SHLIB_SUFFIX}"
+if test "x$DISABLE_JEMALLOC" = "xyes"; then
+	echo "Jemalloc disabled       : YES"
+else
+	echo "Jemalloc disabled       : NO"
+fi
 if test "x$IPV6_SUPPORT" = "xyes"; then
 	echo "IPv6 support            : YES"
 else
