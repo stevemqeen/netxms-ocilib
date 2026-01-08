@@ -39,16 +39,6 @@
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 #endif
 
-// WARNING! this hack works only for d2i_X509(); be carefull when adding new code
-#ifdef OPENSSL_CONST
-# undef OPENSSL_CONST
-#endif
-#if OPENSSL_VERSION_NUMBER >= 0x0090800fL
-# define OPENSSL_CONST const
-#else
-# define OPENSSL_CONST
-#endif
-
 /**
  * Constants
  */
@@ -10128,7 +10118,7 @@ void ClientSession::addCACertificate(NXCPMessage *pRequest)
 #ifdef _WITH_ENCRYPTION
 	UINT32 dwLen, dwQLen, dwCertId;
 	BYTE *pData;
-	OPENSSL_CONST BYTE *p;
+	const BYTE *p;
 	X509 *pCert;
 	TCHAR *pszQuery, *pszEscSubject, *pszComments, *pszEscComments;
 #endif

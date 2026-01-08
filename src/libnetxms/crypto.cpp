@@ -62,7 +62,7 @@ static const TCHAR *s_cipherNames[NETXMS_MAX_CIPHERS] = { _T("AES-256"), _T("Blo
 
 #ifdef _WITH_ENCRYPTION
 
-extern "C" typedef OPENSSL_CONST EVP_CIPHER * (*CIPHER_FUNC)();
+extern "C" typedef const EVP_CIPHER * (*CIPHER_FUNC)();
 static CIPHER_FUNC s_ciphers[NETXMS_MAX_CIPHERS] =
 {
 #ifndef OPENSSL_NO_AES
@@ -135,35 +135,51 @@ static unsigned long CryptoIdCallback()
 /**
  * Create RSA key from binary representation
  */
-RSA LIBNETXMS_EXPORTABLE *RSAKeyFromData(const BYTE *data, size_t size, bool withPrivate)
+RSA_KEY LIBNETXMS_EXPORTABLE RSAKeyFromData(const BYTE *data, size_t size, bool withPrivate)
 {
    const BYTE *bp = data;
-   RSA *key = d2i_RSAPublicKey(NULL, (OPENSSL_CONST BYTE **)&bp, (int)size);
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+   EVP_PKEY *key = d2i_PublicKey(EVP_PKEY_RSA, nullptr, (const BYTE **)&bp, (int)size);
+   if ((key != nullptr) && withPrivate)
+   {
+      EVP_PKEY_free(key);
+      key = d2i_PrivateKey(EVP_PKEY_RSA, nullptr, (const BYTE **)&bp, (int)(size - CAST_FROM_POINTER((bp - data), size_t)));
+   }
+#else
+   RSA *key = d2i_RSAPublicKey(NULL, (const BYTE **)&bp, (int)size);
    if ((key != NULL) && withPrivate)
    {
-      if (d2i_RSAPrivateKey(&key, (OPENSSL_CONST BYTE **)&bp, (int)(size - CAST_FROM_POINTER((bp - data), size_t))) == NULL)
+      if (d2i_RSAPrivateKey(&key, (const BYTE **)&bp, (int)(size - CAST_FROM_POINTER((bp - data), size_t))) == NULL)
       {
          RSA_free(key);
          key = NULL;
       }
    }
+#endif
    return key;
 }
 
 /**
  * Destroy RSA key
  */
-void LIBNETXMS_EXPORTABLE RSAFree(RSA *key)
+void LIBNETXMS_EXPORTABLE RSAFree(RSA_KEY key)
 {
-   RSA_free(key);
+   if (key != nullptr)
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+      EVP_PKEY_free(key);
+#else
+      RSA_free(key);
+#endif
 }
 
 /**
  * Generate random RSA key
  */
-RSA LIBNETXMS_EXPORTABLE *RSAGenerateKey(int bits)
+RSA_KEY LIBNETXMS_EXPORTABLE RSAGenerateKey(int bits)
 {
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+   return EVP_RSA_gen(bits);
+#elif OPENSSL_VERSION_NUMBER >= 0x10100000L
    BIGNUM *bne = BN_new();
    if (!BN_set_word(bne, RSA_F4))
       return NULL;
@@ -197,13 +213,13 @@ bool LIBNETXMS_EXPORTABLE InitCryptoLib(UINT32 dwEnabledCiphers)
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
    CRYPTO_malloc_init();
    OpenSSL_add_all_algorithms();
+   ERR_load_CRYPTO_strings();
 #endif
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
    OPENSSL_init_crypto(OPENSSL_INIT_LOAD_CRYPTO_STRINGS | OPENSSL_INIT_ADD_ALL_CIPHERS | OPENSSL_INIT_ADD_ALL_DIGESTS | OPENSSL_INIT_NO_LOAD_CONFIG | OPENSSL_INIT_ASYNC, NULL);
 #endif
 
-   ERR_load_CRYPTO_strings();
    RAND_seed(random, 8192);
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
@@ -309,7 +325,7 @@ bool LIBNETXMS_EXPORTABLE NXCPDecryptMessage(NXCPEncryptionContext *pCtx, NXCP_E
 UINT32 LIBNETXMS_EXPORTABLE SetupEncryptionContext(NXCPMessage *msg, 
                                                   NXCPEncryptionContext **ppCtx,
                                                   NXCPMessage **ppResponse,
-                                                  RSA *pPrivateKey, int nNXCPVersion)
+                                                  RSA_KEY pPrivateKey, int nNXCPVersion)
 {
    UINT32 dwResult = RCC_NOT_IMPLEMENTED;
 
@@ -333,31 +349,30 @@ UINT32 LIBNETXMS_EXPORTABLE SetupEncryptionContext(NXCPMessage *msg,
       else
       {
 			BYTE ucKeyBuffer[KEY_BUFFER_SIZE];
-			RSA *pServerKey;
 
 			*ppCtx = NXCPEncryptionContext::create(dwCiphers);
          if (*ppCtx != NULL)
          {
             // Encrypt key
             size_t size = msg->getFieldAsBinary(VID_PUBLIC_KEY, ucKeyBuffer, KEY_BUFFER_SIZE);
-            pServerKey = RSAKeyFromData(ucKeyBuffer, size, false);
+            RSA_KEY pServerKey = RSAKeyFromData(ucKeyBuffer, size, false);
             if (pServerKey != NULL)
             {
                (*ppResponse)->setField(VID_RCC, RCC_SUCCESS);
                
-               size = RSA_public_encrypt((*ppCtx)->getKeyLength(), (*ppCtx)->getSessionKey(), ucKeyBuffer, pServerKey, RSA_PKCS1_OAEP_PADDING);
+               size = RSAPublicEncrypt((*ppCtx)->getSessionKey(), (*ppCtx)->getKeyLength(), ucKeyBuffer, sizeof(ucKeyBuffer), pServerKey, RSA_PKCS1_OAEP_PADDING);
                (*ppResponse)->setField(VID_SESSION_KEY, ucKeyBuffer, (UINT32)size);
                (*ppResponse)->setField(VID_KEY_LENGTH, (WORD)(*ppCtx)->getKeyLength());
                
                int ivLength = EVP_CIPHER_iv_length(s_ciphers[(*ppCtx)->getCipher()]());
                if ((ivLength <= 0) || (ivLength > EVP_MAX_IV_LENGTH))
                   ivLength = EVP_MAX_IV_LENGTH;
-               size = RSA_public_encrypt(ivLength, (*ppCtx)->getIV(), ucKeyBuffer, pServerKey, RSA_PKCS1_OAEP_PADDING);
+               size = RSAPublicEncrypt((*ppCtx)->getIV(), ivLength, ucKeyBuffer, sizeof(ucKeyBuffer), pServerKey, RSA_PKCS1_OAEP_PADDING);
                (*ppResponse)->setField(VID_SESSION_IV, ucKeyBuffer, (UINT32)size);
                (*ppResponse)->setField(VID_IV_LENGTH, (WORD)ivLength);
 
                (*ppResponse)->setField(VID_CIPHER, (WORD)(*ppCtx)->getCipher());
-               RSA_free(pServerKey);
+               RSAFree(pServerKey);
                dwResult = RCC_SUCCESS;
             }
             else
@@ -408,7 +423,7 @@ UINT32 LIBNETXMS_EXPORTABLE SetupEncryptionContext(NXCPMessage *msg,
 /**
  * Prepare session key request message
  */
-void LIBNETXMS_EXPORTABLE PrepareKeyRequestMsg(NXCPMessage *msg, RSA *pServerKey, bool useX509Format)
+void LIBNETXMS_EXPORTABLE PrepareKeyRequestMsg(NXCPMessage *msg, RSA_KEY pServerKey, bool useX509Format)
 {
 #ifdef _WITH_ENCRYPTION
    int iLen;
@@ -417,6 +432,22 @@ void LIBNETXMS_EXPORTABLE PrepareKeyRequestMsg(NXCPMessage *msg, RSA *pServerKey
    msg->setCode(CMD_REQUEST_SESSION_KEY);
    msg->setField(VID_SUPPORTED_ENCRYPTION, s_supportedCiphers);
 
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+   if (useX509Format)
+   {
+      iLen = i2d_PUBKEY(pServerKey, nullptr);
+      pKeyBuffer = (BYTE *)malloc(iLen);
+      BYTE *in = pKeyBuffer;
+      i2d_PUBKEY(pServerKey, &in);
+   }
+   else
+   {
+      iLen = i2d_PublicKey(pServerKey, nullptr);
+      pKeyBuffer = (BYTE *)malloc(iLen);
+      BYTE *in = pKeyBuffer;
+      i2d_PublicKey(pServerKey, &in);
+   }
+#else
 	if (useX509Format)
 	{
 		iLen = i2d_RSA_PUBKEY(pServerKey, NULL);
@@ -434,15 +465,16 @@ void LIBNETXMS_EXPORTABLE PrepareKeyRequestMsg(NXCPMessage *msg, RSA *pServerKey
 	msg->setField(VID_PUBLIC_KEY, pKeyBuffer, iLen);
    free(pKeyBuffer);
 #endif
+#endif
 }
 
 /**
  * Load RSA key(s) from file
  */
-RSA LIBNETXMS_EXPORTABLE *LoadRSAKeys(const TCHAR *pszKeyFile)
+RSA_KEY LIBNETXMS_EXPORTABLE LoadRSAKeys(const TCHAR *pszKeyFile)
 {
 #ifdef _WITH_ENCRYPTION
-   RSA *pKey = NULL;
+   RSA_KEY pKey = NULL;
    FILE *fp = _tfopen(pszKeyFile, _T("rb"));
    if (fp != NULL)
    {
@@ -617,7 +649,7 @@ NXCPEncryptionContext::~NXCPEncryptionContext()
 /**
  * Create encryption context from CMD_SESSION_KEY NXCP message
  */
-NXCPEncryptionContext *NXCPEncryptionContext::create(NXCPMessage *msg, RSA *privateKey)
+NXCPEncryptionContext *NXCPEncryptionContext::create(NXCPMessage *msg, RSA_KEY privateKey)
 {
 #ifdef _WITH_ENCRYPTION
    BYTE ucKeyBuffer[KEY_BUFFER_SIZE], ucSessionKey[KEY_BUFFER_SIZE];
@@ -634,7 +666,7 @@ NXCPEncryptionContext *NXCPEncryptionContext::create(NXCPMessage *msg, RSA *priv
 
          // Decrypt session key
          dwKeySize = msg->getFieldAsBinary(VID_SESSION_KEY, ucKeyBuffer, KEY_BUFFER_SIZE);
-         nSize = RSA_private_decrypt(dwKeySize, ucKeyBuffer, ucSessionKey, privateKey, RSA_PKCS1_OAEP_PADDING);
+         nSize = RSAPrivateDecrypt(ucKeyBuffer, dwKeySize, ucSessionKey, sizeof(ucSessionKey), privateKey, RSA_PKCS1_OAEP_PADDING);
          if (nSize == ctx->m_keyLength)
          {
             memcpy(ctx->m_sessionKey, ucSessionKey, nSize);
@@ -644,7 +676,7 @@ NXCPEncryptionContext *NXCPEncryptionContext::create(NXCPMessage *msg, RSA *priv
             if (nIVLen == 0)  // Versions prior to 0.2.13 don't send IV length, assume 16
                nIVLen = 16;
             dwKeySize = msg->getFieldAsBinary(VID_SESSION_IV, ucKeyBuffer, KEY_BUFFER_SIZE);
-            nSize = RSA_private_decrypt(dwKeySize, ucKeyBuffer, ucSessionKey, privateKey, RSA_PKCS1_OAEP_PADDING);
+            nSize = RSAPrivateDecrypt(ucKeyBuffer, dwKeySize, ucSessionKey, sizeof(ucSessionKey), privateKey, RSA_PKCS1_OAEP_PADDING);
             if ((nSize == nIVLen) &&
                 (nIVLen <= EVP_CIPHER_iv_length(s_ciphers[ctx->m_cipher]())))
             {

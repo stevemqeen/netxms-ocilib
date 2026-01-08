@@ -269,7 +269,7 @@ private:
    bool initCipher(int cipher);
 
 public:
-	static NXCPEncryptionContext *create(NXCPMessage *msg, RSA *privateKey);
+	static NXCPEncryptionContext *create(NXCPMessage *msg, RSA_KEY privateKey);
 	static NXCPEncryptionContext *create(UINT32 ciphers);
 
 	virtual ~NXCPEncryptionContext();
@@ -587,12 +587,12 @@ bool LIBNETXMS_EXPORTABLE NXCPDecryptMessage(NXCPEncryptionContext *pCtx,
 UINT32 LIBNETXMS_EXPORTABLE SetupEncryptionContext(NXCPMessage *pMsg,
                                                   NXCPEncryptionContext **ppCtx,
                                                   NXCPMessage **ppResponse,
-                                                  RSA *pPrivateKey, int nNXCPVersion);
-void LIBNETXMS_EXPORTABLE PrepareKeyRequestMsg(NXCPMessage *pMsg, RSA *pServerKey, bool useX509Format);
-RSA LIBNETXMS_EXPORTABLE *LoadRSAKeys(const TCHAR *pszKeyFile);
-RSA LIBNETXMS_EXPORTABLE *RSAKeyFromData(const BYTE *data, size_t size, bool withPrivate);
-void LIBNETXMS_EXPORTABLE RSAFree(RSA *key);
-RSA LIBNETXMS_EXPORTABLE *RSAGenerateKey(int bits);
+                                                  RSA_KEY pPrivateKey, int nNXCPVersion);
+void LIBNETXMS_EXPORTABLE PrepareKeyRequestMsg(NXCPMessage *pMsg, RSA_KEY pServerKey, bool useX509Format);
+RSA_KEY LIBNETXMS_EXPORTABLE LoadRSAKeys(const TCHAR *pszKeyFile);
+RSA_KEY LIBNETXMS_EXPORTABLE RSAKeyFromData(const BYTE *data, size_t size, bool withPrivate);
+void LIBNETXMS_EXPORTABLE RSAFree(RSA_KEY key);
+RSA_KEY LIBNETXMS_EXPORTABLE RSAGenerateKey(int bits);
 
 #ifdef _WIN32
 BOOL LIBNETXMS_EXPORTABLE SignMessageWithCAPI(BYTE *pMsg, UINT32 dwMsgLen, const CERT_CONTEXT *pCert,
