@@ -55,7 +55,7 @@ struct MD_STATE
 #endif
 };
 
-typedef MD_STATE MD5_STATE;
+typedef struct MD_STATE MD5_STATE;
 #else
 typedef unsigned char MD5_STATE[128];
 #endif
@@ -65,7 +65,7 @@ void LIBNETXMS_EXPORTABLE MD5Update(MD5_STATE *state, const void *data, size_t s
 void LIBNETXMS_EXPORTABLE MD5Final(MD5_STATE *state, BYTE *hash);
 
 #ifdef _WITH_ENCRYPTION
-typedef MD_STATE SHA1_STATE;
+typedef struct MD_STATE SHA1_STATE;
 #else
 typedef unsigned char SHA1_STATE[128];
 #endif
@@ -85,8 +85,8 @@ typedef RSA* RSA_KEY;
 static inline EVP_PKEY *EVP_PKEY_from_RSA_KEY(RSA_KEY k)
 {
    EVP_PKEY *ek = EVP_PKEY_new();
-   if (ek == nullptr)
-      return nullptr;
+   if (ek == NULL)
+      return NULL;
    EVP_PKEY_assign_RSA(ek, k);
    return ek;
 }
@@ -98,7 +98,7 @@ static inline EVP_PKEY *EVP_PKEY_from_RSA_KEY(RSA_KEY k)
 static inline ssize_t RSAPublicEncrypt(const void *in, size_t inlen, BYTE *out, size_t outlen, RSA_KEY rsa, int padding)
 {
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
-   EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new(rsa, nullptr);
+   EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new(rsa, NULL);
    if (EVP_PKEY_encrypt_init(ctx) <= 0)
    {
       EVP_PKEY_CTX_free(ctx);
@@ -106,11 +106,11 @@ static inline ssize_t RSAPublicEncrypt(const void *in, size_t inlen, BYTE *out, 
    }
    EVP_PKEY_CTX_set_rsa_padding(ctx, padding);
    size_t bytes = outlen;
-   int rc = EVP_PKEY_encrypt(ctx, out, &bytes, static_cast<const BYTE*>(in), inlen);
+   int rc = EVP_PKEY_encrypt(ctx, out, &bytes, (const BYTE*)in, inlen);
    EVP_PKEY_CTX_free(ctx);
    return (rc > 0) ? bytes : -1;
 #else
-   return RSA_public_encrypt(static_cast<int>(inlen), static_cast<const BYTE*>(in), out, rsa, padding);
+   return RSA_public_encrypt((int)inlen, (const BYTE*)in, out, rsa, padding);
 #endif
 }
 
@@ -120,15 +120,15 @@ static inline ssize_t RSAPublicEncrypt(const void *in, size_t inlen, BYTE *out, 
 static inline ssize_t RSAPrivateDecrypt(const BYTE *in, size_t inlen, void *out, size_t outlen, RSA_KEY rsa, int padding)
 {
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
-   EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new(rsa, nullptr);
+   EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new(rsa, NULL);
    EVP_PKEY_decrypt_init(ctx);
    EVP_PKEY_CTX_set_rsa_padding(ctx, padding);
    size_t bytes = outlen;
-   int rc = EVP_PKEY_decrypt(ctx, static_cast<BYTE*>(out), &bytes, in, inlen);
+   int rc = EVP_PKEY_decrypt(ctx, (BYTE*)out, &bytes, in, inlen);
    EVP_PKEY_CTX_free(ctx);
    return (rc > 0) ? bytes : -1;
 #else
-   return RSA_private_decrypt(static_cast<int>(inlen), in, static_cast<BYTE*>(out), rsa, padding);
+   return RSA_private_decrypt((int)inlen, in, (BYTE*)out, rsa, padding);
 #endif
 }
 
@@ -138,15 +138,15 @@ static inline ssize_t RSAPrivateDecrypt(const BYTE *in, size_t inlen, void *out,
 static inline ssize_t RSAPublicDecrypt(const BYTE *in, size_t inlen, void *out, size_t outlen, RSA_KEY rsa, int padding)
 {
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
-   EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new(rsa, nullptr);
+   EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new(rsa, NULL);
    EVP_PKEY_verify_recover_init(ctx);
    EVP_PKEY_CTX_set_rsa_padding(ctx, padding);
    size_t bytes = outlen;
-   int rc = EVP_PKEY_verify_recover(ctx, static_cast<BYTE*>(out), &bytes, in, inlen);
+   int rc = EVP_PKEY_verify_recover(ctx, (BYTE*)out, &bytes, in, inlen);
    EVP_PKEY_CTX_free(ctx);
    return (rc > 0) ? bytes : -1;
 #else
-   return RSA_public_decrypt(static_cast<int>(inlen), in, static_cast<BYTE*>(out), rsa, padding);
+   return RSA_public_decrypt((int)inlen, in, (BYTE*)out, rsa, padding);
 #endif
 }
 

@@ -139,11 +139,11 @@ RSA_KEY LIBNETXMS_EXPORTABLE RSAKeyFromData(const BYTE *data, size_t size, bool 
 {
    const BYTE *bp = data;
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
-   EVP_PKEY *key = d2i_PublicKey(EVP_PKEY_RSA, nullptr, (const BYTE **)&bp, (int)size);
-   if ((key != nullptr) && withPrivate)
+   EVP_PKEY *key = d2i_PublicKey(EVP_PKEY_RSA, NULL, (const BYTE **)&bp, (int)size);
+   if ((key != NULL) && withPrivate)
    {
       EVP_PKEY_free(key);
-      key = d2i_PrivateKey(EVP_PKEY_RSA, nullptr, (const BYTE **)&bp, (int)(size - CAST_FROM_POINTER((bp - data), size_t)));
+      key = d2i_PrivateKey(EVP_PKEY_RSA, NULL, (const BYTE **)&bp, (int)(size - CAST_FROM_POINTER((bp - data), size_t)));
    }
 #else
    RSA *key = d2i_RSAPublicKey(NULL, (const BYTE **)&bp, (int)size);
@@ -164,7 +164,7 @@ RSA_KEY LIBNETXMS_EXPORTABLE RSAKeyFromData(const BYTE *data, size_t size, bool 
  */
 void LIBNETXMS_EXPORTABLE RSAFree(RSA_KEY key)
 {
-   if (key != nullptr)
+   if (key != NULL)
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
       EVP_PKEY_free(key);
 #else
@@ -435,14 +435,14 @@ void LIBNETXMS_EXPORTABLE PrepareKeyRequestMsg(NXCPMessage *msg, RSA_KEY pServer
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
    if (useX509Format)
    {
-      iLen = i2d_PUBKEY(pServerKey, nullptr);
+      iLen = i2d_PUBKEY(pServerKey, NULL);
       pKeyBuffer = (BYTE *)malloc(iLen);
       BYTE *in = pKeyBuffer;
       i2d_PUBKEY(pServerKey, &in);
    }
    else
    {
-      iLen = i2d_PublicKey(pServerKey, nullptr);
+      iLen = i2d_PublicKey(pServerKey, NULL);
       pKeyBuffer = (BYTE *)malloc(iLen);
       BYTE *in = pKeyBuffer;
       i2d_PublicKey(pServerKey, &in);
@@ -608,11 +608,13 @@ NXCPEncryptionContext::NXCPEncryptionContext()
    m_cipher = -1;
 #ifdef _WITH_ENCRYPTION
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
    OSSL_PROVIDER *legacy = OSSL_PROVIDER_load(NULL, "legacy");
    if (legacy == NULL)
    {
       nxlog_debug(1, _T("Failed to load legacy OpenSSL provider (required for Blowfish)"));
    }
+#endif
 	
    m_encryptor = EVP_CIPHER_CTX_new();
    m_decryptor = EVP_CIPHER_CTX_new();

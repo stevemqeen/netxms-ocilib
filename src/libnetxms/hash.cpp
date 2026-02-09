@@ -125,10 +125,10 @@ void LIBNETXMS_EXPORTABLE MD5Init(MD5_STATE *state)
 #ifdef _WITH_ENCRYPTION
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
    state->context = EVP_MD_CTX_new();
-   EVP_DigestInit_ex(state->context, EVP_md5(), nullptr);
+   EVP_DigestInit_ex(state->context, EVP_md5(), NULL);
 #else
    EVP_MD_CTX_init(&state->context);
-   EVP_DigestInit_ex(&state->context, EVP_md5(), nullptr);
+   EVP_DigestInit_ex(&state->context, EVP_md5(), NULL);
 #endif
 #else
    I_md5_init(reinterpret_cast<md5_state_t*>(state));
@@ -158,10 +158,10 @@ void LIBNETXMS_EXPORTABLE MD5Final(MD5_STATE *state, BYTE *hash)
 {
 #ifdef _WITH_ENCRYPTION
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
-   EVP_DigestFinal_ex(state->context, hash, nullptr);
+   EVP_DigestFinal_ex(state->context, hash, NULL);
    EVP_MD_CTX_free(state->context);
 #else
-   EVP_DigestFinal_ex(&state->context, hash, nullptr);
+   EVP_DigestFinal_ex(&state->context, hash, NULL);
    EVP_MD_CTX_cleanup(&state->context);
 #endif
 #else
@@ -177,9 +177,9 @@ void LIBNETXMS_EXPORTABLE CalculateMD5Hash(const unsigned char *data, size_t nby
 #ifdef _WITH_ENCRYPTION
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
    EVP_MD_CTX *context = EVP_MD_CTX_new();
-   EVP_DigestInit_ex(context, EVP_md5(), nullptr);
+   EVP_DigestInit_ex(context, EVP_md5(), NULL);
    EVP_DigestUpdate(context, data, nbytes);
-   EVP_DigestFinal_ex(context, hash, nullptr);
+   EVP_DigestFinal_ex(context, hash, NULL);
    EVP_MD_CTX_free(context);
 #else
    MD5(data, nbytes, hash);
@@ -200,10 +200,10 @@ void LIBNETXMS_EXPORTABLE SHA1Init(SHA1_STATE *state)
 #ifdef _WITH_ENCRYPTION
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
    state->context = EVP_MD_CTX_new();
-   EVP_DigestInit_ex(state->context, EVP_sha1(), nullptr);
+   EVP_DigestInit_ex(state->context, EVP_sha1(), NULL);
 #else
    EVP_MD_CTX_init(&state->context);
-   EVP_DigestInit_ex(&state->context, EVP_sha1(), nullptr);
+   EVP_DigestInit_ex(&state->context, EVP_sha1(), NULL);
 #endif
 #else
    I_SHA1Init(reinterpret_cast<SHA1_CTX*>(state));
@@ -233,10 +233,10 @@ void LIBNETXMS_EXPORTABLE SHA1Final(SHA1_STATE *state, BYTE *hash)
 {
 #ifdef _WITH_ENCRYPTION
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
-   EVP_DigestFinal_ex(state->context, hash, nullptr);
+   EVP_DigestFinal_ex(state->context, hash, NULL);
    EVP_MD_CTX_free(state->context);
 #else
-   EVP_DigestFinal_ex(&state->context, hash, nullptr);
+   EVP_DigestFinal_ex(&state->context, hash, NULL);
    EVP_MD_CTX_cleanup(&state->context);
 #endif
 #else
@@ -313,7 +313,7 @@ static inline bool CalculateFileHash(const TCHAR *fileName, BYTE *hash, int64_t 
 {
    bool success = false;
    FILE *fileHandle = _tfopen(fileName, _T("rb"));
-   if (fileHandle != nullptr)
+   if (fileHandle != NULL)
    {
       BYTE buffer[FILE_BLOCK_SIZE];
       C context;
