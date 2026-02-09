@@ -26,9 +26,17 @@
 #include "sha1.h"
 #include "sha2.h"
 
+#ifdef _WITH_ENCRYPTION
+#include <openssl/md5.h>
+#include <openssl/sha.h>
+#include <openssl/evp.h>
+#endif
+
 #if defined(_WIN32) && !defined(UNDER_CE)
 # include <io.h>
 #endif
+
+#include <nxcrypto.h>
 
 /**
  * File block size (used for file hash calculation)
@@ -110,44 +118,130 @@ UINT32 LIBNETXMS_EXPORTABLE CalculateCRC32(const unsigned char *pData, UINT32 nB
 }
 
 /**
+ * Init MD5 hash function
+ */
+void LIBNETXMS_EXPORTABLE MD5Init(MD5_STATE *state)
+{
+#ifdef _WITH_ENCRYPTION
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+   state->context = EVP_MD_CTX_new();
+   EVP_DigestInit_ex(state->context, EVP_md5(), NULL);
+#else
+   EVP_MD_CTX_init(&state->context);
+   EVP_DigestInit_ex(&state->context, EVP_md5(), NULL);
+#endif
+#else
+   I_md5_init(reinterpret_cast<md5_state_t*>(state));
+#endif
+}
+
+/**
+ * Append data to MD5 hash
+ */
+void LIBNETXMS_EXPORTABLE MD5Update(MD5_STATE *state, const void *data, size_t size)
+{
+#ifdef _WITH_ENCRYPTION
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+   EVP_DigestUpdate(state->context, data, size);
+#else
+   EVP_DigestUpdate(&state->context, data, size);
+#endif
+#else
+   I_md5_append(reinterpret_cast<md5_state_t*>(state), static_cast<const md5_byte_t*>(data), static_cast<unsigned int>(size));
+#endif
+}
+
+/**
+ * Finish MD5 calculation
+ */
+void LIBNETXMS_EXPORTABLE MD5Final(MD5_STATE *state, BYTE *hash)
+{
+#ifdef _WITH_ENCRYPTION
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+   EVP_DigestFinal_ex(state->context, hash, NULL);
+   EVP_MD_CTX_free(state->context);
+#else
+   EVP_DigestFinal_ex(&state->context, hash, NULL);
+   EVP_MD_CTX_cleanup(&state->context);
+#endif
+#else
+   I_md5_finish(reinterpret_cast<md5_state_t*>(state), reinterpret_cast<md5_byte_t*>(hash));
+#endif
+}
+
+/**
  * Calculate MD5 hash for array of bytes
  */
 void LIBNETXMS_EXPORTABLE CalculateMD5Hash(const unsigned char *data, size_t nbytes, BYTE *hash)
 {
+#ifdef _WITH_ENCRYPTION
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+   EVP_MD_CTX *context = EVP_MD_CTX_new();
+   EVP_DigestInit_ex(context, EVP_md5(), NULL);
+   EVP_DigestUpdate(context, data, nbytes);
+   EVP_DigestFinal_ex(context, hash, NULL);
+   EVP_MD_CTX_free(context);
+#else
+   MD5(data, nbytes, hash);
+#endif
+#else
 	md5_state_t state;
-
 	I_md5_init(&state);
 	I_md5_append(&state, (const md5_byte_t *)data, (int)nbytes);
 	I_md5_finish(&state, (md5_byte_t *)hash);
+#endif
 }
 
 /**
- * Calculate MD5 hash for repeated pattern in virtual buffer
+ * Init SHA1 hash function
  */
-void LIBNETXMS_EXPORTABLE MD5HashForPattern(const unsigned char *data, size_t patternSize, size_t fullSize, BYTE *hash)
+void LIBNETXMS_EXPORTABLE SHA1Init(SHA1_STATE *state)
 {
-	md5_state_t state;
-	int count, patternIndex;
-	const unsigned char *src;
-	BYTE *dst, patternBuffer[64];
+#ifdef _WITH_ENCRYPTION
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+   state->context = EVP_MD_CTX_new();
+   EVP_DigestInit_ex(state->context, EVP_sha1(), NULL);
+#else
+   EVP_MD_CTX_init(&state->context);
+   EVP_DigestInit_ex(&state->context, EVP_sha1(), NULL);
+#endif
+#else
+   I_SHA1Init(reinterpret_cast<SHA1_CTX*>(state));
+#endif
+}
 
-	I_md5_init(&state);
-	for(count = 0, src = data, patternIndex = 0; count < (int)fullSize; count += 64)
-	{
-		dst = patternBuffer;
-		for(int i = 0; i < 64; i++)
-		{
-			*dst++ = *src++;
-			patternIndex++;
-			if (patternIndex >= (int)patternSize)
-			{
-				patternIndex = 0;
-				src = data;
-			}
-		}
-		I_md5_append(&state, (const md5_byte_t *)patternBuffer, 64);
-	}
-	I_md5_finish(&state, (md5_byte_t *)hash);
+/**
+ * Append data to SHA1 hash
+ */
+void LIBNETXMS_EXPORTABLE SHA1Update(SHA1_STATE *state, const void *data, size_t size)
+{
+#ifdef _WITH_ENCRYPTION
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+   EVP_DigestUpdate(state->context, data, size);
+#else
+   EVP_DigestUpdate(&state->context, data, size);
+#endif
+#else
+   I_SHA1Update(reinterpret_cast<SHA1_CTX*>(state), static_cast<const unsigned char*>(data), static_cast<unsigned int>(size));
+#endif
+}
+
+/**
+ * Finish SHA1 calculation
+ */
+void LIBNETXMS_EXPORTABLE SHA1Final(SHA1_STATE *state, BYTE *hash)
+{
+#ifdef _WITH_ENCRYPTION
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+   EVP_DigestFinal_ex(state->context, hash, NULL);
+   EVP_MD_CTX_free(state->context);
+#else
+   EVP_DigestFinal_ex(&state->context, hash, NULL);
+   EVP_MD_CTX_cleanup(&state->context);
+#endif
+#else
+   I_SHA1Final(reinterpret_cast<SHA1_CTX*>(state), hash);
+#endif
 }
 
 /**
@@ -155,116 +249,122 @@ void LIBNETXMS_EXPORTABLE MD5HashForPattern(const unsigned char *data, size_t pa
  */
 void LIBNETXMS_EXPORTABLE CalculateSHA1Hash(unsigned char *data, size_t nbytes, BYTE *hash)
 {
+#ifdef _WITH_ENCRYPTION
+   SHA1(static_cast<const unsigned char*>(data), nbytes, hash);
+#else
    SHA1_CTX context;
-
    I_SHA1Init(&context);
    I_SHA1Update(&context, data, (uint32)nbytes);
    I_SHA1Final(hash, &context);
+#endif
+}
+
+/**
+ * Calculate hash for repeated pattern in virtual buffer using provided hash function
+ */
+template<typename C, void (*__Init)(C*), void (*__Update)(C*, const void*, size_t), void (*__Final)(C*, BYTE*), size_t __blockSize>
+static inline void HashForPattern(const void *data, size_t patternSize, size_t fullSize, BYTE *hash)
+{
+   C context;
+   size_t count, patternIndex;
+   const unsigned char *src;
+   BYTE *dst, patternBuffer[__blockSize];
+
+   __Init(&context);
+   for(count = 0, src = static_cast<const unsigned char*>(data), patternIndex = 0; count < fullSize; count += __blockSize)
+   {
+      dst = patternBuffer;
+      for(size_t i = 0; i < __blockSize; i++)
+      {
+         *dst++ = *src++;
+         patternIndex++;
+         if (patternIndex >= patternSize)
+         {
+            patternIndex = 0;
+            src = static_cast<const unsigned char*>(data);
+         }
+      }
+      __Update(&context, patternBuffer, __blockSize);
+   }
+   __Final(&context, hash);
+}
+
+/**
+ * Calculate MD5 hash for repeated pattern in virtual buffer
+ */
+void LIBNETXMS_EXPORTABLE MD5HashForPattern(const void *data, size_t patternSize, size_t fullSize, BYTE *hash)
+{
+   HashForPattern<MD5_STATE, MD5Init, MD5Update, MD5Final, 64>(data, patternSize, fullSize, hash);
 }
 
 /**
  * Calculate SHA1 hash for repeated pattern in virtual buffer
  */
-void LIBNETXMS_EXPORTABLE SHA1HashForPattern(unsigned char *data, size_t patternSize, size_t fullSize, BYTE *hash)
+void LIBNETXMS_EXPORTABLE SHA1HashForPattern(const void *data, size_t patternSize, size_t fullSize, BYTE *hash)
 {
-   SHA1_CTX context;
-	int count, patternIndex;
-	const unsigned char *src;
-	BYTE *dst, patternBuffer[64];
+   HashForPattern<SHA1_STATE, SHA1Init, SHA1Update, SHA1Final, 64>(data, patternSize, fullSize, hash);
+}
 
-   I_SHA1Init(&context);
-	for(count = 0, src = data, patternIndex = 0; count < (int)fullSize; count += 64)
-	{
-		dst = patternBuffer;
-		for(int i = 0; i < 64; i++)
-		{
-			*dst++ = *src++;
-			patternIndex++;
-			if (patternIndex >= (int)patternSize)
-			{
-				patternIndex = 0;
-				src = data;
-			}
-		}
-	   I_SHA1Update(&context, patternBuffer, 64);
-	}
-   I_SHA1Final(hash, &context);
+/**
+ * Calculate hash for given file with provided hash function
+ */
+template<typename C, void (*__Init)(C*), void (*__Update)(C*, const void*, size_t), void (*__Final)(C*, BYTE*)>
+static inline bool CalculateFileHash(const TCHAR *fileName, BYTE *hash, int64_t calculationSize)
+{
+   bool success = false;
+   FILE *fileHandle = _tfopen(fileName, _T("rb"));
+   if (fileHandle != NULL)
+   {
+      BYTE buffer[FILE_BLOCK_SIZE];
+      C context;
+      __Init(&context);
+      bool useShorterSize = calculationSize > 0;
+      while(true)
+      {
+         size_t size = fread(buffer, 1, useShorterSize ? MIN(calculationSize, FILE_BLOCK_SIZE) : FILE_BLOCK_SIZE , fileHandle);
+         if (size == 0 || (useShorterSize && (calculationSize == 0)))
+         {
+            __Final(&context, hash);
+            success = true;
+            break;
+         }
+         __Update(&context, buffer, static_cast<unsigned int>(size));
+         calculationSize -= size;
+      }
+      fclose(fileHandle);
+   }
+   return success;
 }
 
 /**
  * Calculate MD5 hash for given file
  */
-BOOL LIBNETXMS_EXPORTABLE CalculateFileMD5Hash(const TCHAR *pszFileName, BYTE *pHash)
+bool LIBNETXMS_EXPORTABLE CalculateFileMD5Hash(const TCHAR *fileName, BYTE *hash, int64_t size)
 {
-	size_t iSize;
-	md5_state_t state;
-	char szBuffer[FILE_BLOCK_SIZE];
-	BOOL bSuccess = FALSE;
-	FILE *fileHandle;
-
-   fileHandle = _tfopen(pszFileName, _T("rb"));
-   if (fileHandle != NULL)
-   {
-      I_md5_init(&state);
-      while(1)
-      {
-         iSize = fread(szBuffer, 1, FILE_BLOCK_SIZE, fileHandle);
-         if (iSize <= 0)
-            break;
-      	I_md5_append(&state, (const md5_byte_t *)szBuffer, (int)iSize);
-      }
-      fclose(fileHandle);
-      if (iSize == 0)
-      {
-         I_md5_finish(&state, (md5_byte_t *)pHash);
-         bSuccess = TRUE;
-      }
-   }
-   return bSuccess;
+   return CalculateFileHash<MD5_STATE, MD5Init, MD5Update, MD5Final>(fileName, hash, size);
 }
 
 /**
  * Calculate SHA1 hash for given file
  */
-BOOL LIBNETXMS_EXPORTABLE CalculateFileSHA1Hash(const TCHAR *pszFileName, BYTE *pHash)
+bool LIBNETXMS_EXPORTABLE CalculateFileSHA1Hash(const TCHAR *fileName, BYTE *hash, int64_t size)
 {
-   size_t iSize;
-   FILE *fileHandle;
-   SHA1_CTX context;
-   char szBuffer[FILE_BLOCK_SIZE];
-   BOOL bSuccess = FALSE;
-
-   fileHandle = _tfopen(pszFileName, _T("rb"));
-   if (fileHandle != NULL)
-   {
-      I_SHA1Init(&context);
-      while(1)
-      {
-         iSize = fread(szBuffer, 1, FILE_BLOCK_SIZE, fileHandle);
-         if (iSize <= 0)
-            break;
-         I_SHA1Update(&context, (BYTE *)szBuffer, (uint32)iSize);
-      }
-      fclose(fileHandle);
-      if (iSize == 0)
-      {
-         I_SHA1Final(pHash, &context);
-         bSuccess = TRUE;
-      }
-   }
-   return bSuccess;
+   return CalculateFileHash<SHA1_STATE, SHA1Init, SHA1Update, SHA1Final>(fileName, hash, size);
 }
 
 /**
  * Calculate SHA2-256 hash for array of bytes
  */
-void LIBNETXMS_EXPORTABLE CalculateSHA256Hash(const unsigned char *data, size_t len, unsigned char *hash)
+void LIBNETXMS_EXPORTABLE CalculateSHA256Hash(const void *data, size_t len, BYTE *hash)
 {
+#ifdef _WITH_ENCRYPTION
+   SHA256(static_cast<const unsigned char*>(data), len, hash);
+#else
    sha256_ctx ctx;
-
    I_sha256_init(&ctx);
    I_sha256_update(&ctx, data, (unsigned int)len);
    I_sha256_final(&ctx, hash);
+#endif
 }
 
 /**

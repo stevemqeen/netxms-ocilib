@@ -25,16 +25,6 @@
 
 #ifdef _WITH_ENCRYPTION
 
-// WARNING! this hack works only for d2i_X509(); be careful when adding new code
-#ifdef OPENSSL_CONST
-# undef OPENSSL_CONST
-#endif
-#if OPENSSL_VERSION_NUMBER >= 0x0090800fL
-# define OPENSSL_CONST const
-#else
-# define OPENSSL_CONST
-#endif
-
 #if OPENSSL_VERSION_NUMBER < 0x10000000L
 inline int EVP_PKEY_id(EVP_PKEY *key)
 {
@@ -279,7 +269,7 @@ X509 *CertificateFromLoginMessage(NXCPMessage *msg)
 	const BYTE *data = msg->getBinaryFieldPtr(VID_CERTIFICATE, &len);
 	if ((data != NULL) && (len > 0))
 	{
-		OPENSSL_CONST BYTE *p = (OPENSSL_CONST BYTE *)data;
+		const BYTE *p = (const BYTE *)data;
 		cert = d2i_X509(NULL, &p, (long)len);
 	}
 	return cert;
@@ -453,7 +443,7 @@ bool ValidateAgentCertificate(X509 *cert)
 void ReloadCertificates()
 {
 	BYTE *pBinCert;
-	OPENSSL_CONST BYTE *p;
+	const BYTE *p;
 	DB_RESULT hResult;
 	int i, nRows, nLoaded;
 	UINT32 dwLen;
